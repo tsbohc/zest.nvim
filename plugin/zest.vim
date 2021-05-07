@@ -1,1 +1,1 @@
-lua require('zest.compile')
+lua require('zest')

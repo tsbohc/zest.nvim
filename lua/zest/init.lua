@@ -2,12 +2,12 @@ local compile = {}
 local state = {["initialised?"] = false}
 local fnl_path = "/home/sean/.garden/etc/nvim.d/fnl/"
 local lua_path = "/home/sean/.config/nvim/lua/"
-local zest_fnl_path = "/home/sean/.local/share/nvim/site/pack/packer/start/zest/fnl/zest/"
-local zest_lua_path = "/home/sean/.local/share/nvim/site/pack/packer/start/zest/lua/zest/"
+local zest_fnl_path = "/home/sean/code/zest/fnl/zest/"
+local zest_lua_path = "/home/sean/code/zest/lua/zest/"
 vim.cmd("augroup testgroup")
 vim.cmd("autocmd!")
-vim.cmd(("autocmd BufWritePost " .. fnl_path .. "*.fnl :lua require('zest.compile')(vim.fn.expand('%:p'), '" .. fnl_path .. "', '" .. lua_path .. "')"))
-vim.cmd(("autocmd BufWritePost " .. zest_fnl_path .. "*.fnl :lua require('zest.compile')(vim.fn.expand('%:p'), '" .. zest_fnl_path .. "', '" .. zest_lua_path .. "')"))
+vim.cmd(("autocmd BufWritePost " .. fnl_path .. "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" .. fnl_path .. "', '" .. lua_path .. "')"))
+vim.cmd(("autocmd BufWritePost " .. zest_fnl_path .. "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" .. zest_fnl_path .. "', '" .. zest_lua_path .. "')"))
 vim.cmd("augroup end")
 local fs = {}
 fs.dirname = function(path)
