@@ -2,7 +2,7 @@
 
 Macro wizardry for configuring nvim in fennel. Provides compile time macros that have no impact on startup time.
 
-#### WIP!!
+### WIP!!
 
 Not ready for general use! Many features are missing, and existing ones are subject to change!
 
@@ -10,7 +10,7 @@ Not ready for general use! Many features are missing, and existing ones are subj
 
 Macros currently implemented in draft states:
 
-#### se-
+### se-
 
 ```clojure
 (se- encoding "utf-8")
@@ -26,7 +26,7 @@ vim.api.nvim_win_set_option(0, "number", true)
 vim.api.nvim_win_set_option(0, "wrap", false)
 ```
 
-#### ki-
+### ki-
 
 ```clojure
 (ki- [n] U <c-r>)
