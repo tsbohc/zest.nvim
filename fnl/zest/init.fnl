@@ -1,4 +1,5 @@
 (local fs (require :zest.fs))
+(local co (require :zest.core))
 
 (local compile {})
 
@@ -47,12 +48,13 @@
     fennel))
 
 (fn compile.compile [source relative-to target-path]
-  (when (not (source:find "macros"))
-    (let [fennel (init-compiler)
-          relative (source:gsub relative-to "")
-          target (.. target-path (relative:gsub ".fnl$" ".lua"))]
-      (fs.mkdir (fs.dirname target))
-      (fs.write target (fennel.compileString (fs.read source))))))
+  (let [except [:se- :ki-]]
+    (when (not (co.has? except (source:sub -7 -5)))
+      (let [fennel (init-compiler)
+            relative (source:gsub relative-to "")
+            target (.. target-path (relative:gsub ".fnl$" ".lua"))]
+        (fs.mkdir (fs.dirname target))
+        (fs.write target (fennel.compileString (fs.read source)))))))
 
 (setmetatable
   compile {:__call (fn [_ ...] (compile.compile ...))})

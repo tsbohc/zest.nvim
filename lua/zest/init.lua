@@ -1,4 +1,5 @@
 local fs = require("zest.fs")
+local co = require("zest.core")
 local compile = {}
 local state = {["initialised?"] = false}
 local fnl_path = "/home/sean/.garden/etc/nvim.d/fnl/"
@@ -36,7 +37,8 @@ local function init_compiler()
   return fennel
 end
 compile.compile = function(source, relative_to, target_path)
-  if not source:find("macros") then
+  local except = {"se-", "ki-"}
+  if not co["has?"](except, source:sub(-7, -5)) then
     local fennel = init_compiler()
     local relative = source:gsub(relative_to, "")
     local target = (target_path .. relative:gsub(".fnl$", ".lua"))
