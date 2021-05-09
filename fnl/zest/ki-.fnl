@@ -1,6 +1,3 @@
-(fn expr [a]
-  `(type ,a))
-
 (fn xs-str [xs]
   (when (not= nil xs)
     (let [r []]
@@ -44,6 +41,5 @@
          (vim.api.nvim_set_keymap m# ,fs ,t ,op)))))
 
 {: ki-
- : expr
  : is-callback?
  : my-def}
