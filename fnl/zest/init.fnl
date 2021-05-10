@@ -3,8 +3,6 @@
 
 (local compile {})
 
-; log to a preview buffer below?
-
 (local state {:initialised? false})
 
 (local fnl-path "/home/sean/.garden/etc/nvim.d/fnl/")
@@ -13,13 +11,14 @@
 (local zest-fnl-path "/home/sean/code/zest/fnl/zest/")
 (local zest-lua-path "/home/sean/code/zest/lua/zest/")
 
-; create hooks
+; log to a preview buffer below?
 
-(vim.cmd "augroup testgroup")
-(vim.cmd "autocmd!")
-(vim.cmd (.. "autocmd BufWritePost " fnl-path "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" fnl-path "', '" lua-path "')"))
-(vim.cmd (.. "autocmd BufWritePost " zest-fnl-path "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" zest-fnl-path "', '" zest-lua-path "')"))
-(vim.cmd "augroup end")
+(when (not (. vim.g :aniseed#env))
+  (vim.cmd "augroup testgroup")
+  (vim.cmd "autocmd!")
+  (vim.cmd (.. "autocmd BufWritePost " fnl-path "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" fnl-path "', '" lua-path "')"))
+  (vim.cmd (.. "autocmd BufWritePost " zest-fnl-path "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" zest-fnl-path "', '" zest-lua-path "')"))
+  (vim.cmd "augroup end"))
 
 ; compile
 
