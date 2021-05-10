@@ -39,8 +39,7 @@ local function init_compiler()
   return fennel
 end
 compile.compile = function(source, relative_to, target_path)
-  local except = {"se-", "ki-"}
-  if not co["has?"](except, source:sub(-7, -5)) then
+  if not source:find("macros.fnl$") then
     local fennel = init_compiler()
     local relative = source:gsub(relative_to, "")
     local target = (target_path .. relative:gsub(".fnl$", ".lua"))
