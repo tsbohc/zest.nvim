@@ -26,19 +26,31 @@
           (tset parsed o true))))
     parsed))
 
-(fn ki- [opts fs ts]
-  ; we gotta be careful with ts
-  (let [ms (x-str (table.remove opts 1))
-        fs (x-str fs)
+(local state {:id 0})
+
+(fn new-id []
+  (let [id (. state :id)]
+    (tset state :id (+ 1 id))
+    id))
+
+(fn ki- [options fs ts]
+  (let [modes (x-str (table.remove options 1))
+        f (x-str fs)
         callback? (is-callback? ts)
+        id (.. "_____ki" (new-id))
+        o (parse-opt (xs-str options))
         t (if callback?
-             (.. "v:lua." :wooo "()")
-             (x-str ts))
-        op (parse-opt (xs-str opts))]
-    `(do
-       ,(when callback? (my-def ts))
-       (each [m# (string.gmatch ,ms ".")]
-         (vim.api.nvim_set_keymap m# ,fs ,t ,op)))))
+            (if (. o :expr)
+              (.. "v:lua." id "()")
+              (.. ":lua _G." id "()<cr>"))
+            (x-str ts))
+        r []]
+    (when callback?
+      (table.insert r `(tset _G ,id #,ts)))
+    (each [m (string.gmatch modes ".")]
+      (table.insert r `(vim.api.nvim_set_keymap ,m ,f ,t ,o)))
+    r))
+
 
 {: ki-
  : is-callback?
