@@ -1,16 +1,26 @@
-# zest
+<div align="center">
+<h1 align="center">
+  zest.nvim
+</h1>
+a pinch of lisp for a tangy init.lua
+</div>
+<br>
 
-Macro wizardry for configuring nvim in fennel. Provides compile time macros that have no impact on startup time.
+An opinionated macro library that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
 
-### WIP!!
+Whenever possible, zest outputs code that consists of bare neovim api calls, falling back to functions if runtime processing is unavoidable. Though not by a significant amount, this can potentially reduce startup time.
 
-Not ready for general use! Many features are missing, and existing ones are subject to change!
+The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
 
-## features
+**WIP:** not ready for general use, but feedback is very welcome!
 
-Macros currently implemented in draft states:
+## macros
+Below are a few examples of what is possible with zest.
+
+In each one, the top block contains fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
 
 ### se-
+- viml-esque set option
 
 ```clojure
 (se- encoding "utf-8")
@@ -18,7 +28,6 @@ Macros currently implemented in draft states:
 (se- number)
 (se- nowrap)
 ```
-Compiles to:
 ```lua
 vim.api.nvim_set_option("encoding", "utf-8")
 vim.api.nvim_buf_set_option(0, "synmaxcol", 256)
@@ -26,30 +35,43 @@ vim.api.nvim_win_set_option(0, "number", true)
 vim.api.nvim_win_set_option(0, "wrap", false)
 ```
 
-### ki-
-
+### li-
+- map keys literally
 ```clojure
-(ki- [n] U <c-r>)
-(ki- [n] <c-m> ":echo 'woo'<cr>")
-(ki- [nvo expr] :j (if (> vim.v.count 0) :j :gj))
+(li- [nv] <ScrollWheelUp> <c-y>)
 ```
-Compiles to:
 ```lua
-for m_0_ in string.gmatch("n", ".") do
-  vim.api.nvim_set_keymap(m_0_, "U", "<c-r>", {noremap = true})
+do
+  local _ = {
+    vim.api.nvim_set_keymap("n", "<ScrollWheelUp>", "<c-y>", {noremap = true}),
+    vim.api.nvim_set_keymap("v", "<ScrollWheelUp>", "<c-y>", {noremap = true})
+  }
 end
-for m_0_ in string.gmatch("n", ".") do
-  vim.api.nvim_set_keymap(m_0_, "<c-m>", ":echo 'woo'<cr>", {noremap = true})
+```
+
+### ki-
+- map keys by reference
+```clojure
+(each [_ k (ipairs [:h :j :k :l])]
+  (ki- [n] (.. "<c-" k ">") (.. "<c-w>" k)))
+```
+```lua
+for _, k in ipairs({"h", "j", "k", "l"}) do
+  require("zest.bind")("n", ("<c-" .. k .. ">"), ("<c-w>" .. k), {noremap = true})
 end
+```
+
+- map keys to fennel functions
+```clojure
+(ki- [nvo :expr] :k (fn [] (if (> vim.v.count 0) :k :gk)))
+```
+```lua
 local function _0_()
   if (vim.v.count > 0) then
-    return "j"
+    return "k"
   else
-    return "gj"
+    return "gk"
   end
 end
-_G["__map_1"] = _0_
-for m_0_ in string.gmatch("nvo", ".") do
-  vim.api.nvim_set_keymap(m_0_, "j", "v:lua.__map_1()", {expr = true, noremap = true})
-end
+require("zest.bind")("nvo", "k", _0_, {expr = true, noremap = true})
 ```
