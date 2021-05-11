@@ -75,3 +75,12 @@ local function _0_()
 end
 require("zest.bind")("nvo", "k", _0_, {expr = true, noremap = true})
 ```
+
+### no-
+- execute normal mode commands
+```clojure
+(no- dd)
+```
+```lua
+vim.api.nvim_command("norm! dd")
+```
