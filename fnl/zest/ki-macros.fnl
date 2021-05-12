@@ -36,7 +36,7 @@
         r []]
     (each [m (string.gmatch modes ".")]
       (table.insert r `(vim.api.nvim_set_keymap ,m ,f ,t ,o)))
-    r))
+    `(do ,(unpack r))))
 
 {: ki-
  : li-}
