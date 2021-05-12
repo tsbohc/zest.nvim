@@ -42,10 +42,8 @@ vim.api.nvim_win_set_option(0, "wrap", false)
 ```
 ```lua
 do
-  local _ = {
-    vim.api.nvim_set_keymap("n", "<ScrollWheelUp>", "<c-y>", {noremap = true}),
-    vim.api.nvim_set_keymap("v", "<ScrollWheelUp>", "<c-y>", {noremap = true})
-  }
+  vim.api.nvim_set_keymap("n", "<ScrollWheelUp>", "<c-y>", {noremap = true}),
+  vim.api.nvim_set_keymap("v", "<ScrollWheelUp>", "<c-y>", {noremap = true})
 end
 ```
 
