@@ -6,13 +6,11 @@ local fnl_path = "/home/sean/.garden/etc/nvim.d/fnl/"
 local lua_path = "/home/sean/.config/nvim/lua/"
 local zest_fnl_path = "/home/sean/code/zest/fnl/zest/"
 local zest_lua_path = "/home/sean/code/zest/lua/zest/"
-if not vim.g["aniseed#env"] then
-  vim.cmd("augroup testgroup")
-  vim.cmd("autocmd!")
-  vim.cmd(("autocmd BufWritePost " .. fnl_path .. "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" .. fnl_path .. "', '" .. lua_path .. "')"))
-  vim.cmd(("autocmd BufWritePost " .. zest_fnl_path .. "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" .. zest_fnl_path .. "', '" .. zest_lua_path .. "')"))
-  vim.cmd("augroup end")
-end
+vim.cmd("augroup testgroup")
+vim.cmd("autocmd!")
+vim.cmd(("autocmd BufWritePost " .. fnl_path .. "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" .. fnl_path .. "', '" .. lua_path .. "')"))
+vim.cmd(("autocmd BufWritePost " .. zest_fnl_path .. "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" .. zest_fnl_path .. "', '" .. zest_lua_path .. "')"))
+vim.cmd("augroup end")
 local function get_rtp()
   local r = ""
   local fnl_suffix = "/fnl/?.fnl"
@@ -47,8 +45,8 @@ compile.compile = function(source, relative_to, target_path)
     return fs.write(target, fennel.compileString(fs.read(source)))
   end
 end
-local function _1_(_, ...)
+local function _0_(_, ...)
   return compile.compile(...)
 end
-setmetatable(compile, {__call = _1_})
+setmetatable(compile, {__call = _0_})
 return compile
