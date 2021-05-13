@@ -34,6 +34,7 @@ vim.api.nvim_buf_set_option(0, "synmaxcol", 256)
 vim.api.nvim_win_set_option(0, "number", true)
 vim.api.nvim_win_set_option(0, "wrap", false)
 ```
+- *note:* some window options, such as `expandtab`, are considered buffer scoped in the api, meaning they will only be set for the current buffer. this will be fixed after neovim's 0.5 release.
 
 ### li-
 - map keys literally
