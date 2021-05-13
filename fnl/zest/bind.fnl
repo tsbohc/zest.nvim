@@ -17,6 +17,7 @@
       (string.gsub "_dash_" "-")))
 
 (fn _G.__ki_execute_map [id]
+  ;(print (reverse-strip id))
   (let [f (. ki id)
         (ok? result) (pcall f)]
     (if (not ok?)
@@ -24,6 +25,7 @@
       result)))
 
 (fn bind [modes fs ts opts]
+  ;(print fs ts)
   (match (type ts)
     :function
     (let [id (strip fs)

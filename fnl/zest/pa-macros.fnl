@@ -1,10 +1,14 @@
 (fn pa- [repo ...]
-  ; NOTE: this doen't suppor nesting
   (let [formatted [(tostring repo)]
-        args [...]]
+        args [...]
+        r []]
     (each [i v (ipairs args)]
       (when (and (not= 1 i) (= 0 (% (# args) i)))
-        (tset formatted (. args (- i 1)) v)))
-    `(use ,formatted)))
+        (let [k (. args (- i 1))]
+          (if (not= k :zest)
+            (tset formatted k v)
+            (table.insert r `(,v))))))
+    (table.insert r `(use ,formatted))
+    `(do ,(unpack r))))
 
 {: pa-}
