@@ -16,26 +16,37 @@ _G.__ki_execute_map = function(id)
   end
 end
 local function bind(modes, fs, ts, opts)
-  local _0_ = type(ts)
-  if (_0_ == "function") then
-    local id = strip(fs)
-    local cmd
-    if opts.expr then
-      cmd = ("v:lua.__ki_execute_map('" .. id .. "')")
+  if (nil ~= fs) then
+    local _0_ = type(ts)
+    if (_0_ == "function") then
+      local id = strip(fs)
+      local cmd
+      if opts.expr then
+        cmd = ("v:lua.__ki_execute_map('" .. id .. "')")
+      else
+        cmd = (":lua _G.__ki_execute_map('" .. id .. "')<cr>")
+      end
+      ki[id] = ts
+      for m in string.gmatch(modes, ".") do
+        vim.api.nvim_set_keymap(m, fs, cmd, opts)
+      end
+      return nil
+    elseif (_0_ == "string") then
+      local cmd = ts
+      for m in string.gmatch(modes, ".") do
+        vim.api.nvim_set_keymap(m, fs, cmd, opts)
+      end
+      return nil
     else
-      cmd = (":lua _G.__ki_execute_map('" .. id .. "')<cr>")
+      local _ = _0_
+      return print(("<zest:ki> unhandled type '" .. type(ts) .. "' of right side in binding '" .. fs .. "'"))
     end
-    ki[id] = ts
-    for m in string.gmatch(modes, ".") do
-      vim.api.nvim_set_keymap(m, fs, cmd, opts)
+  else
+    if (nil ~= ts) then
+      return print("<zest:ki> left side of a binding evaluated to nil!")
+    else
+      return print("<zest:ki> both sides of a binding evaluated to nil!")
     end
-    return nil
-  elseif (_0_ == "string") then
-    local cmd = ts
-    for m in string.gmatch(modes, ".") do
-      vim.api.nvim_set_keymap(m, fs, cmd, opts)
-    end
-    return nil
   end
 end
 local function _0_(_, ...)
