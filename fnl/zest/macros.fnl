@@ -96,7 +96,7 @@
 
 (fn colo- [v]
   "set colorscheme to 'v'"
-  `(vim.api.nvim_exec ,(.. "colo " (tostring v)) true))
+  `(vim.api.nvim_exec ,(.. "colo " v) true))
 
 (fn lead- [v]
   "map leader to 'v'"

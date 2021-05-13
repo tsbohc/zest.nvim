@@ -15,9 +15,7 @@ The plugin can be installed on its own or together with [aniseed](https://github
 **WIP:** not ready for general use, but feedback is very welcome!
 
 ## macros
-Below are a few examples of what is possible with zest.
-
-In each one, the top block contains fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
+In each example, the top block contains fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
 
 ### se-
 - viml-esque set option
@@ -75,11 +73,48 @@ end
 require("zest.bind")("nvo", "k", _0_, {expr = true, noremap = true})
 ```
 
-### no-
-- execute normal mode commands
+### g-
+- set global variable
 ```clojure
-(no- dd)
+(g- gruvbox_contrast_dark :soft)
 ```
 ```lua
-vim.api.nvim_command("norm! dd")
+vim.g["gruvbox_contrast_dark"] = "soft"
+```
+
+### utils
+- *exec-* execute an ex command
+- *norm-* execute normal mode commands
+- *eval-* evaluate a vimscript expression
+- *viml-* evaluate a block of vimscript
+
+```clojure
+(ki- [x] :* (fn []
+  (norm- "gvy")
+  (exec- (.. "/" (eval- "@\"")))
+  (norm- "<c-o>")))
+```
+```lua
+local function _0_()
+  vim.api.nvim_command("norm! gvy")
+  vim.api.nvim_command(("/" .. vim.api.nvim_eval("@\"")))
+  return vim.api.nvim_command("norm! <c-o>")
+end
+require("zest.bind")("x", "*", _0_, {noremap = true})
+```
+
+### misc
+- *colo-* set current colorscheme
+```clojure
+(colo- :limestone)
+```
+```lua
+vim.api.nvim_exec("colo limestone", true)
+```
+- *lead-* mapleader
+```clojure
+(lead- " ")
+```
+```lua
+vim.g["mapleader"] = " "
 ```
