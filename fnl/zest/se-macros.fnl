@@ -45,4 +45,8 @@
       (se- (o:sub 3) false)
       (warn (.. "se- option '" o "' not found")))))
 
-{: se-}
+(fn colo- [v]
+  `(vim.cmd ,(.. "colo " (tostring v))))
+
+{: se-
+ : colo-}

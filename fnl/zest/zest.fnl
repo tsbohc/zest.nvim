@@ -15,8 +15,8 @@
 
 (vim.cmd "augroup testgroup")
 (vim.cmd "autocmd!")
-(vim.cmd (.. "autocmd BufWritePost " fnl-path "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" fnl-path "', '" lua-path "')"))
-(vim.cmd (.. "autocmd BufWritePost " zest-fnl-path "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" zest-fnl-path "', '" zest-lua-path "')"))
+(vim.cmd (.. "autocmd BufWritePost " fnl-path "*.fnl :lua require('zest.zest')(vim.fn.expand('%:p'), '" fnl-path "', '" lua-path "')"))
+(vim.cmd (.. "autocmd BufWritePost " zest-fnl-path "*.fnl :lua require('zest.zest')(vim.fn.expand('%:p'), '" zest-fnl-path "', '" zest-lua-path "')"))
 (vim.cmd "augroup end")
 
 ; compile
@@ -30,17 +30,17 @@
     (each [e (rtp:gmatch "(.-),")]
       (let [f (.. e "/fnl")
             l (.. e "/lua")]
-        (if (fs.isdir f)
+        (if (= 1 (vim.fn.isdirectory f))
           (set r (.. r ";" (.. e fnl-suffix)))
-          (fs.isdir l)
+          (= 1 (vim.fn.isdirectory l))
           (set r (.. r ";" (.. e lua-suffix))))))
     (r:sub 2)))
 
 (fn init-compiler []
-  "initialise fennel compiler"
+  "initialise zest compiler"
   (let [fennel (require :zest.fennel)]
     (when (not state.initialised?)
-      (print "zest: initiate compiler")
+      (print "<zest> initialise compiler")
       (set fennel.path (.. (get-rtp) ";" fennel.path))
       (tset state :initialised? true))
     fennel))
@@ -50,7 +50,7 @@
     (let [fennel (init-compiler)
           relative (source:gsub relative-to "")
           target (.. target-path (relative:gsub ".fnl$" ".lua"))]
-      (fs.mkdir (fs.dirname target))
+      (vim.fn.mkdir (fs.dirname target) "p")
       (fs.write target (fennel.compileString (fs.read source))))))
 
 (setmetatable

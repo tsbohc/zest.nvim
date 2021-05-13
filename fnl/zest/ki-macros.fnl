@@ -38,5 +38,9 @@
       (table.insert r `(vim.api.nvim_set_keymap ,m ,f ,t ,o)))
     `(do ,(unpack r))))
 
+(fn mapleader- [v]
+  `(tset vim.g :mapleader ,v))
+
 {: ki-
- : li-}
+ : li-
+ : mapleader-}

@@ -8,8 +8,8 @@ local zest_fnl_path = "/home/sean/code/zest/fnl/zest/"
 local zest_lua_path = "/home/sean/code/zest/lua/zest/"
 vim.cmd("augroup testgroup")
 vim.cmd("autocmd!")
-vim.cmd(("autocmd BufWritePost " .. fnl_path .. "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" .. fnl_path .. "', '" .. lua_path .. "')"))
-vim.cmd(("autocmd BufWritePost " .. zest_fnl_path .. "*.fnl :lua require('zest')(vim.fn.expand('%:p'), '" .. zest_fnl_path .. "', '" .. zest_lua_path .. "')"))
+vim.cmd(("autocmd BufWritePost " .. fnl_path .. "*.fnl :lua require('zest.zest')(vim.fn.expand('%:p'), '" .. fnl_path .. "', '" .. lua_path .. "')"))
+vim.cmd(("autocmd BufWritePost " .. zest_fnl_path .. "*.fnl :lua require('zest.zest')(vim.fn.expand('%:p'), '" .. zest_fnl_path .. "', '" .. zest_lua_path .. "')"))
 vim.cmd("augroup end")
 local function get_rtp()
   local r = ""
@@ -19,9 +19,9 @@ local function get_rtp()
   for e in rtp:gmatch("(.-),") do
     local f = (e .. "/fnl")
     local l = (e .. "/lua")
-    if fs.isdir(f) then
+    if (1 == vim.fn.isdirectory(f)) then
       r = (r .. ";" .. (e .. fnl_suffix))
-    elseif fs.isdir(l) then
+    elseif (1 == vim.fn.isdirectory(l)) then
       r = (r .. ";" .. (e .. lua_suffix))
     end
   end
@@ -30,7 +30,7 @@ end
 local function init_compiler()
   local fennel = require("zest.fennel")
   if not state["initialised?"] then
-    print("zest: initiate compiler")
+    print("<zest> initialise compiler")
     fennel.path = (get_rtp() .. ";" .. fennel.path)
     state["initialised?"] = true
   end
@@ -41,7 +41,7 @@ compile.compile = function(source, relative_to, target_path)
     local fennel = init_compiler()
     local relative = source:gsub(relative_to, "")
     local target = (target_path .. relative:gsub(".fnl$", ".lua"))
-    fs.mkdir(fs.dirname(target))
+    vim.fn.mkdir(fs.dirname(target), "p")
     return fs.write(target, fennel.compileString(fs.read(source)))
   end
 end

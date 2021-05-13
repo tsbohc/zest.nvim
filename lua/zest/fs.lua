@@ -32,16 +32,4 @@ end
 fs.dirname = function(path)
   return path:match("(.*[/\\])")
 end
-fs.mkdir = function(path)
-  return os.execute(("mkdir -p " .. path))
-end
-fs.isdir = function(path)
-  local file = io.open(path, "r")
-  if (nil == file) then
-    return false
-  else
-    file:close()
-    return true
-  end
-end
 return fs
