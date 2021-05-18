@@ -65,9 +65,17 @@
 
 ; cm-
 
-(fn cm- [name f]
-  ; TODO: <f-args> ?
-  `((. (require :zest.bind) :cm) ,(tostring name) ,f))
+(fn cm- [...]
+  ; TODO: redo this, this is dumb
+  (match (# [...])
+    4 (let [(opts name f args) ...
+            opts (table.concat (xs-str opts) " ")
+            args (table.concat (xs-str args) " ")]
+        `((. (require :zest.bind) :cm) ,opts ,(tostring name) ,f ,args))
+    2 (let [(name f) ...
+            opts ""
+            args ""]
+        `((. (require :zest.bind) :cm) ,opts ,(tostring name) ,f ,args))))
 
 ; pa-
 

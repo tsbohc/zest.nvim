@@ -8,6 +8,12 @@ local function bind_21(kind, id, f)
   state[kind][id_esc] = f
   return ("v:lua.zestExec('" .. kind .. "', '" .. id_esc .. "')")
 end
+local function get_cm(kind, id, t)
+  local _0_ = t
+  if (_0_ == "expr") then
+    return ("v:lua.zestExec('" .. kind .. "', '" .. escape(id) .. "')")
+  end
+end
 _G.zestExec = function(kind, id_esc, ...)
   local f = state[kind][id_esc]
   local id = string.gsub(string.gsub(id_esc, "\\<", "<"), "\\>", ">")
@@ -18,8 +24,16 @@ _G.zestExec = function(kind, id_esc, ...)
     return result
   end
 end
-M.cm = function(id, f)
-  return vim.api.nvim_command(("com! " .. id .. " :call " .. bind_21("cm", id, f)))
+M.cm = function(opts, id, ts, args)
+  local _0_ = type(ts)
+  if (_0_ == "function") then
+    local cmd = ("com " .. opts .. " " .. id .. " :call v:lua.zestExec('cm', '" .. escape(id) .. "', " .. args .. ")")
+    bind_21("cm", id, ts)
+    return vim.api.nvim_command(cmd)
+  elseif (_0_ == "string") then
+    local cmd = ("com " .. opts .. " " .. id .. " " .. ts)
+    return vim.api.nvim_command(cmd)
+  end
 end
 M.ki = function(modes, fs, ts, opts)
   local _0_ = type(ts)
@@ -34,42 +48,11 @@ M.ki = function(modes, fs, ts, opts)
       vim.api.nvim_set_keymap(m, fs, ex, opts)
     end
     return nil
+  elseif (_0_ == "string") then
+    for m in string.gmatch(modes, ".") do
+      vim.api.nvim_set_keymap(m, fs, ts, opts)
+    end
+    return nil
   end
 end
-M["create-map"] = function(modes, fs, ts, opts)
-  if (nil ~= fs) then
-    local _0_ = type(ts)
-    if (_0_ == "function") then
-      local cmd
-      if opts.expr then
-        cmd = bind_21("ki", fs, ts)
-      else
-        cmd = (":call " .. bind_21("ki", fs, ts) .. "<cr>")
-      end
-      for m in string.gmatch(modes, ".") do
-        vim.api.nvim_set_keymap(m, fs, cmd, opts)
-      end
-      return nil
-    elseif (_0_ == "string") then
-      local cmd = ts
-      for m in string.gmatch(modes, ".") do
-        vim.api.nvim_set_keymap(m, fs, cmd, opts)
-      end
-      return nil
-    else
-      local _ = _0_
-      return print(("<zest:ki> unhandled type '" .. type(ts) .. "' of right side in binding '" .. fs .. "'"))
-    end
-  else
-    if (nil ~= ts) then
-      return print("<zest:ki> left side of a binding evaluated to nil!")
-    else
-      return print("<zest:ki> both sides of a binding evaluated to nil!")
-    end
-  end
-end
-local function _0_(_, ...)
-  return M["create-map"](...)
-end
-setmetatable(M, {__call = _0_})
 return M

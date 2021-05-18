@@ -8,7 +8,7 @@ a pinch of lisp for a tangy init.lua
 
 An opinionated macro library that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
 
-Whenever possible, zest outputs code that consists of bare neovim api calls, falling back to functions if runtime processing is unavoidable. Though not by a significant amount, this can potentially reduce startup time.
+Whenever possible, zest outputs code that consists of bare neovim api calls, falling back to functions if runtime processing is unavoidable.
 
 The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
 
