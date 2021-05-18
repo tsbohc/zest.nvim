@@ -92,13 +92,13 @@ vim.g["gruvbox_contrast_dark"] = "soft"
 (ki- [x] :* (fn []
   (norm- "gvy")
   (exec- (.. "/" (eval- "@\"")))
-  (norm- "<c-o>")))
+  (norm- "N")))
 ```
 ```lua
 local function _0_()
   vim.api.nvim_command("norm! gvy")
   vim.api.nvim_command(("/" .. vim.api.nvim_eval("@\"")))
-  return vim.api.nvim_command("norm! <c-o>")
+  return vim.api.nvim_command("norm! N")
 end
 require("zest.bind")("x", "*", _0_, {noremap = true})
 ```

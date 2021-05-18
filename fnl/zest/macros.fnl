@@ -1,6 +1,7 @@
 ; TODO:
 ; au- create autocommand
 ; cm- def cmd as function
+; ki- fns not silenced by default, investigate
 
 ; util
 
@@ -59,6 +60,15 @@
       `(do ,(unpack out))
       `,(unpack out))))
 
+; cm-
+
+; <f-args> ?
+
+(fn cm- [name f]
+  `(let [b# (require :zest.bind)]
+     (b#.bind :cm ,(tostring name) ,f)
+     (b#.create-cmd ,(tostring name))))
+
 ; pa-
 
 (fn pa- [repo ...]
@@ -66,7 +76,8 @@
         args [...]
         out []]
     (each [i v (ipairs args)]
-      (when (and (not= 1 i) (= 0 (% (# args) i)))
+      ; FIXME
+      (when (and (not= 1 i) (= 0 (% (# args) 2)))
         (let [k (. args (- i 1))]
           (if (not= k :zest)
             (tset formatted k v)
@@ -109,6 +120,7 @@
 {: se-
  : li-
  : ki-
+ : cm-
  : pa-
  : exec-
  : norm-
@@ -117,8 +129,6 @@
  : colo-
  : lead-
  : g-}
-
-
 
 ;vim.g["zest#env"] = "/home/sean/.garden/etc/nvim.d/fnl"
 ;return require('packer').startup(function() use '~/code/zest' end)

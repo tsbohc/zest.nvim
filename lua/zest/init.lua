@@ -1,7 +1,7 @@
 local fs = require("zest.fs")
 local co = require("zest.core")
-local compile = {}
-local state = {["initialised?"] = false}
+local M = {}
+local initialised_3f = false
 local function get_rtp()
   local r = ""
   local fnl_suffix = "/fnl/?.fnl"
@@ -20,14 +20,14 @@ local function get_rtp()
 end
 local function init_compiler()
   local fennel = require("zest.fennel")
-  if not state["initialised?"] then
+  if not initialised_3f then
     print("<zest> initialise compiler")
     fennel.path = (get_rtp() .. ";" .. fennel.path)
-    state["initialised?"] = true
+    initialised_3f = true
   end
   return fennel
 end
-compile.compile = function(source, relative_to, target_path)
+M.compile = function(source, relative_to, target_path)
   if not source:find("macros.fnl$") then
     local fennel = init_compiler()
     local relative = source:gsub(relative_to, "")
@@ -37,7 +37,7 @@ compile.compile = function(source, relative_to, target_path)
   end
 end
 local function _0_(_, ...)
-  return compile.compile(...)
+  return M.compile(...)
 end
-setmetatable(compile, {__call = _0_})
-return compile
+setmetatable(M, {__call = _0_})
+return M

@@ -1,9 +1,9 @@
 (local fs (require :zest.fs))
 (local co (require :zest.core))
 
-(local compile {})
+(local M {})
 
-(local state {:initialised? false})
+(var initialised? false)
 
 (fn get-rtp []
   "get rtp entries containing /fnl and /lua formatted for fennel.path"
@@ -23,13 +23,13 @@
 (fn init-compiler []
   "initialise zest compiler"
   (let [fennel (require :zest.fennel)]
-    (when (not state.initialised?)
+    (when (not initialised?)
       (print "<zest> initialise compiler")
       (set fennel.path (.. (get-rtp) ";" fennel.path))
-      (tset state :initialised? true))
+      (set initialised? true))
     fennel))
 
-(fn compile.compile [source relative-to target-path]
+(fn M.compile [source relative-to target-path]
   (when (not (source:find "macros.fnl$"))
     (let [fennel (init-compiler)
           relative (source:gsub relative-to "")
@@ -37,7 +37,6 @@
       (vim.fn.mkdir (fs.dirname target) "p")
       (fs.write target (fennel.compileString (fs.read source))))))
 
-(setmetatable
-  compile {:__call (fn [_ ...] (compile.compile ...))})
+(setmetatable M {:__call (fn [_ ...] (M.compile ...))})
 
-compile
+M

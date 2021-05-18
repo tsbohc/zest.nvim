@@ -1,8 +1,7 @@
 (local M {})
 
-; NOTE: vim complained about eof when building a command for __ki_execute_map with '<C-M>'
-
-(local ki {})
+; NOTE: vim complained about eof when building a command for zest_exec with '<C-M>'
+; prooobably due to <...> being special
 
 (fn strip [s]
   (s:gsub "[<>-]"
@@ -16,24 +15,39 @@
       (string.gsub "_right_angle_bracket_" ">")
       (string.gsub "_dash_" "-")))
 
-(fn _G.__ki_execute_map [id]
-  ;(print (reverse-strip id))
-  (let [f (. ki id)
-        (ok? result) (pcall f)]
+(local state
+  {:ki {}
+   :cm {}})
+
+(fn M.bind [kind id f]
+  "bind a function into the state dictionary"
+  (tset (. state kind) id f))
+
+;(fn excmd [kind id v?]
+;  (if v?
+;    (.. "v:lua.zestExec('" kind "', '" id "')")
+;    (.. ":lua _G.zestExec('" kind "', '" id "')")))
+
+(fn _G.zestExec [kind id ...]
+  (let [f (. (. state kind) id)
+        (ok? result) (pcall f ...)]
     (if (not ok?)
-      (error (.. "\n[ ki- ]: error while executing mapping '" (reverse-strip id) "':\n" result))
+      (error (.. "\n<zest:" kind "> error while executing '" (reverse-strip id) "':\n" result))
       result)))
 
-(fn bind [modes fs ts opts]
+(fn M.create-cmd [name]
+  (vim.api.nvim_command (.. "com! " name " :lua _G.zestExec(\"cm\", \"" name "\")")))
+
+(fn M.create-map [modes fs ts opts]
   ;(print fs ts)
   (if (not= nil fs)
     (match (type ts)
       :function
       (let [id (strip fs)
             cmd (if (. opts :expr)
-                  (.. "v:lua.__ki_execute_map('" id "')")
-                  (.. ":lua _G.__ki_execute_map('" id "')<cr>"))]
-        (tset ki id ts)
+                  (.. "v:lua.zestExec('ki', '" id "')")
+                  (.. ":lua _G.zestExec('ki', '" id "')<cr>"))]
+        (M.bind :ki id ts)
         (each [m (string.gmatch modes ".")]
           (vim.api.nvim_set_keymap m fs cmd opts)))
       :string
@@ -46,6 +60,6 @@
       (print (.. "<zest:ki> both sides of a binding evaluated to nil!")))))
 
 (setmetatable
-  M {:__call (fn [_ ...] (bind ...))})
+  M {:__call (fn [_ ...] (M.create-map ...))})
 
 M
