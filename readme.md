@@ -14,8 +14,25 @@ The plugin can be installed on its own or together with [aniseed](https://github
 
 **WIP:** not ready for general use, but feedback is very welcome!
 
+## usage
+
+Install with your favourite package manager.
+
+- require all macros
+```clojure
+(require-macros :zest.macros)
+```
+- or import macros selectively, with renaming support
+```clojure
+(import-macros {:ki- keybind} :zest.macros)
+```
+
+Files under `~/.config/nvim/fnl` will be compiled to `~/.config/nvim/lua` on save.
+
+- *nb:* if aniseed is installed, zest will not initialise its compiler.
+
 ## macros
-In each example, the top block contains fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
+In each example, the top block contains the fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
 
 ### se-
 - viml-esque set option
@@ -32,7 +49,7 @@ vim.api.nvim_buf_set_option(0, "synmaxcol", 256)
 vim.api.nvim_win_set_option(0, "number", true)
 vim.api.nvim_win_set_option(0, "wrap", false)
 ```
-- *note:* some window options, such as `expandtab`, are considered buffer scoped in the api, meaning they will only be set for the current buffer. this will be fixed after neovim's 0.5 release.
+- *nb:* some window options, such as `expandtab`, are considered buffer scoped in the api, meaning they will only be set for the current buffer. this will be fixed after neovim's 0.5 release.
 
 ### li-
 - map keys literally
@@ -58,7 +75,7 @@ for _, k in ipairs({"h", "j", "k", "l"}) do
 end
 ```
 
-- map keys to fennel functions
+- map keys to functions
 ```clojure
 (ki- [nvo :expr] :k (fn [] (if (> vim.v.count 0) :k :gk)))
 ```
