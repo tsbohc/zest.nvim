@@ -1,7 +1,11 @@
 ; TODO:
+; debug mode
 ; au- create autocommand
-; cm- def cmd as function
+; cm- bind function as excmd, def-cm- create function as excmd? maybe even defmap? (def-ki- <c-m> [nvo :expr] (if ... :a)
 ; ki- fns not silenced by default, investigate
+
+; NB!
+; attempts to optimize requiring bind once (into a local, global, etc) with 100+ rules showed no noticible improvementm and even slowdowns, 5ms on average
 
 ; util
 
@@ -44,9 +48,8 @@
 
 (fn ki- [args fs ts]
   "bind 'fs' to 'ts' by reference via runtime evaluation"
-  ; TODO: require once?
   (let [(modes opts) (keymap-options args)]
-    `((require :zest.bind) ,modes ,fs ,ts ,opts)))
+    `((. (require :zest.bind) :ki) ,modes ,fs ,ts ,opts)))
 
 (fn li- [args fs ts]
   "bind 'fs' to 'ts' as literals via compile time parsing"
@@ -62,12 +65,9 @@
 
 ; cm-
 
-; <f-args> ?
-
 (fn cm- [name f]
-  `(let [b# (require :zest.bind)]
-     (b#.bind :cm ,(tostring name) ,f)
-     (b#.create-cmd ,(tostring name))))
+  ; TODO: <f-args> ?
+  `((. (require :zest.bind) :cm) ,(tostring name) ,f))
 
 ; pa-
 
@@ -129,6 +129,3 @@
  : colo-
  : lead-
  : g-}
-
-;vim.g["zest#env"] = "/home/sean/.garden/etc/nvim.d/fnl"
-;return require('packer').startup(function() use '~/code/zest' end)

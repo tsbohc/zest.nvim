@@ -1,39 +1,51 @@
 local M = {}
-local function strip(s)
-  return s:gsub("[<>-]", {["-"] = "_dash_", ["<"] = "_left_angle_bracket_", [">"] = "_right_angle_bracket_"})
-end
-local function reverse_strip(s)
-  return string.gsub(string.gsub(string.gsub(s, "_left_angle_bracket_", "<"), "_right_angle_bracket_", ">"), "_dash_", "-")
+local function escape(s)
+  return s:gsub("[<>]", {["<"] = "\\<", [">"] = "\\>"})
 end
 local state = {cm = {}, ki = {}}
-M.bind = function(kind, id, f)
-  state[kind][id] = f
-  return nil
+local function bind_21(kind, id, f)
+  local id_esc = escape(id)
+  state[kind][id_esc] = f
+  return ("v:lua.zestExec('" .. kind .. "', '" .. id_esc .. "')")
 end
-_G.zestExec = function(kind, id, ...)
-  local f = state[kind][id]
+_G.zestExec = function(kind, id_esc, ...)
+  local f = state[kind][id_esc]
+  local id = string.gsub(string.gsub(id_esc, "\\<", "<"), "\\>", ">")
   local ok_3f, result = pcall(f, ...)
   if not ok_3f then
-    return error(("\n<zest:" .. kind .. "> error while executing '" .. reverse_strip(id) .. "':\n" .. result))
+    return error(("\n<zest:" .. kind .. "> error while executing '" .. id .. "':\n" .. result))
   else
     return result
   end
 end
-M["create-cmd"] = function(name)
-  return vim.api.nvim_command(("com! " .. name .. " :lua _G.zestExec(\"cm\", \"" .. name .. "\")"))
+M.cm = function(id, f)
+  return vim.api.nvim_command(("com! " .. id .. " :call " .. bind_21("cm", id, f)))
+end
+M.ki = function(modes, fs, ts, opts)
+  local _0_ = type(ts)
+  if (_0_ == "function") then
+    local ex
+    if opts.expr then
+      ex = bind_21("ki", fs, ts)
+    else
+      ex = (":call " .. bind_21("ki", fs, ts) .. "<cr>")
+    end
+    for m in string.gmatch(modes, ".") do
+      vim.api.nvim_set_keymap(m, fs, ex, opts)
+    end
+    return nil
+  end
 end
 M["create-map"] = function(modes, fs, ts, opts)
   if (nil ~= fs) then
     local _0_ = type(ts)
     if (_0_ == "function") then
-      local id = strip(fs)
       local cmd
       if opts.expr then
-        cmd = ("v:lua.zestExec('ki', '" .. id .. "')")
+        cmd = bind_21("ki", fs, ts)
       else
-        cmd = (":lua _G.zestExec('ki', '" .. id .. "')<cr>")
+        cmd = (":call " .. bind_21("ki", fs, ts) .. "<cr>")
       end
-      M.bind("ki", id, ts)
       for m in string.gmatch(modes, ".") do
         vim.api.nvim_set_keymap(m, fs, cmd, opts)
       end
