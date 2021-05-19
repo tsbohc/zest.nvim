@@ -63,15 +63,24 @@
       `(do ,(unpack out))
       `,(unpack out))))
 
+; au-
+
+;(au- [BufWritePost] :path-string (fn [] (print "woo")))
+
 ; cm-
 
 (fn cm- [...]
   ; TODO: redo this, this is dumb
+  ; FIXME: there could be a use case where name should be composable
   (match (# [...])
     4 (let [(opts name f args) ...
             opts (table.concat (xs-str opts) " ")
             args (table.concat (xs-str args) " ")]
         `((. (require :zest.bind) :cm) ,opts ,(tostring name) ,f ,args))
+    3 (let [(opts name str) ...
+            opts (table.concat (xs-str opts) " ")
+            args ""]
+        `((. (require :zest.bind) :cm) ,opts ,(tostring name) ,str))
     2 (let [(name f) ...
             opts ""
             args ""]
@@ -84,7 +93,6 @@
         args [...]
         out []]
     (each [i v (ipairs args)]
-      ; FIXME
       (when (and (not= 1 i) (= 0 (% (# args) 2)))
         (let [k (. args (- i 1))]
           (if (not= k :zest)
