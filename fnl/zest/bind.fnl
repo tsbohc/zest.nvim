@@ -3,9 +3,7 @@
 (fn escape [s] (s:gsub "[<>]" {:< "\\<" :> "\\>"}))
 (fn un-escape [s] (string.gsub (string.gsub s "\\<" "<") "\\>" ">"))
 
-(local state
-  {:ki {}
-   :cm {}})
+(local state {:ki {} :cm {} :au {}})
 
 (fn bind! [kind id f]
   "cache function and return the respective ex command"
@@ -41,6 +39,31 @@
       :string
       (let [cmd (.. "com " opts " " id " " ts)]
         (vim.api.nvim_command cmd)))))
+
+(var au-id 0)
+
+(fn au-uid []
+  (set au-id (+ 1 au-id))
+  (.. "au_" au-id))
+
+(fn M.au [events path ts]
+  (if (check :au "<new-au>" ts)
+    (match (type ts)
+      :function
+      (let [id (au-uid)
+            ex (.. ":call " (bind! :au id ts))
+            body (.. "au " events " " path " " ex)]
+        (vim.api.nvim_command (.. "augroup " id))
+        (vim.api.nvim_command "autocmd!")
+        (vim.api.nvim_command body)
+        (vim.api.nvim_command "augroup end"))
+      :string
+      (let [id (au-uid)
+            body (.. "au " events " " path " " ts)]
+        (vim.api.nvim_command (.. "augroup " id))
+        (vim.api.nvim_command "autocmd!")
+        (vim.api.nvim_command body)
+        (vim.api.nvim_command "augroup end")))))
 
 (fn M.ki [modes fs ts opts]
   "bind keymaps"

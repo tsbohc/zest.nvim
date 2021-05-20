@@ -65,7 +65,9 @@
 
 ; au-
 
-;(au- [BufWritePost] :path-string (fn [] (print "woo")))
+(fn au- [events path ts]
+  (let [events (table.concat (xs-str events) ",")]
+    `((. (require :zest.bind) :au) ,events ,path ,ts)))
 
 ; cm-
 
@@ -136,6 +138,7 @@
 {: se-
  : li-
  : ki-
+ : au-
  : cm-
  : pa-
  : exec-

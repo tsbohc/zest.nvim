@@ -5,7 +5,7 @@ end
 local function un_escape(s)
   return string.gsub(string.gsub(s, "\\<", "<"), "\\>", ">")
 end
-local state = {cm = {}, ki = {}}
+local state = {au = {}, cm = {}, ki = {}}
 local function bind_21(kind, id, f)
   local id_esc = escape(id)
   state[kind][id_esc] = f
@@ -46,6 +46,32 @@ M.cm = function(opts, id, ts, args)
     elseif (_0_ == "string") then
       local cmd = ("com " .. opts .. " " .. id .. " " .. ts)
       return vim.api.nvim_command(cmd)
+    end
+  end
+end
+local au_id = 0
+local function au_uid()
+  au_id = (1 + au_id)
+  return ("au_" .. au_id)
+end
+M.au = function(events, path, ts)
+  if check("au", "<new-au>", ts) then
+    local _0_ = type(ts)
+    if (_0_ == "function") then
+      local id = au_uid()
+      local ex = (":call " .. bind_21("au", id, ts))
+      local body = ("au " .. events .. " " .. path .. " " .. ex)
+      vim.api.nvim_command(("augroup " .. id))
+      vim.api.nvim_command("autocmd!")
+      vim.api.nvim_command(body)
+      return vim.api.nvim_command("augroup end")
+    elseif (_0_ == "string") then
+      local id = au_uid()
+      local body = ("au " .. events .. " " .. path .. " " .. ts)
+      vim.api.nvim_command(("augroup " .. id))
+      vim.api.nvim_command("autocmd!")
+      vim.api.nvim_command(body)
+      return vim.api.nvim_command("augroup end")
     end
   end
 end
