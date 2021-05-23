@@ -63,6 +63,11 @@
       `(do ,(unpack out))
       `,(unpack out))))
 
+; op-
+
+(fn op- [fs ts]
+  `((. (require :zest.bind) :op) ,fs ,ts))
+
 ; au-
 
 (fn au- [events pattern ts]
@@ -138,6 +143,7 @@
 {: se-
  : li-
  : ki-
+ : op-
  : au-
  : cm-
  : pa-

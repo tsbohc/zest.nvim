@@ -1,6 +1,14 @@
 (local M {})
 (local state {})
 
+(require-macros :zest.macros)
+
+; TODO
+; store commands applied to functions in state too
+
+; FIXME
+; binding to percent sign is potentially broken for some reason
+
 ; we're storing them in _G for operator-func compatibility of the wrapper
 (set _G.___zest {:ex {} :ki {} :au {} :cm {} :op {}})
 
@@ -67,8 +75,8 @@
       :ki  (.. ":call " v-lua "()<cr>")
       :au  (.. ":call " v-lua "()")
       :cm  (.. "com " (if xt.opts (.. xt.opts " ") "") id " :call " v-lua "(" (or xt.args "") ")")
-      :opn (.. ":set operator-func=" v-lua "<cr>g@")
-      :opv (.. ":<c-u>call " v-lua "(visualmode())<cr>"))))
+      :opn (.. ":set operatorfunc=v:lua.___zest.op." (esc id) "<cr>g@")
+      :opv (.. ":<c-u>call v:lua.___zest.op." (esc id) "(visualmode())<cr>"))))
 
 (fn bind [kind id f xt]
   (if (check kind id f)
@@ -102,18 +110,35 @@
 ; we need to store the fn per mode so that a different functins may be bound to the same fs in other modes
 (fn M.ki [modes fs ts opts]
   "define keybinds"
-  (let [kind (if opts.expr :ex :ki)
-        f (prep-fn kind fs ts)]
-    (each [m (string.gmatch modes ".")]
-      (bind-fn kind (.. m "_" fs) f)
-      (vim.api.nvim_set_keymap m fs (get-cmd kind (.. m "_" fs)) opts))))
+  (if (check :ki fs ts)
+    (let [kind (if opts.expr :ex :ki)
+          f (prep-fn kind fs ts)]
+      (each [m (string.gmatch modes ".")]
+        (bind-fn kind (.. m "_" fs) f)
+        (vim.api.nvim_set_keymap m fs (get-cmd kind (.. m "_" fs)) opts)))))
 
 (fn M.cm [opts id ts xt]
   "define ex commands"
   (let [cmd (bind :cm id ts xt)]
     (vim.api.nvim_command cmd)))
 
-; normal-mode -- :set operator-func=v:lua.<id><cr>g@
-; visual-mode -- :<c-u>call v:lua.<id>(visualmode())<cr>
+(fn def-operator [f t]
+  (let [r (eval- "@@")]
+    (match t
+      :char (norm- "`[v`]y")
+      _     (norm- (.. "`<" t "`>y")))
+    (let [context (eval- "@@")
+          output (f context)]
+      (when output
+        (vim.fn.setreg "@" output (vim.fn.getregtype "@"))
+        (norm- "gv\"0p"))
+      (vim.fn.setreg "@@" r (vim.fn.getregtype "@@")))))
+
+(fn M.op [fs ts]
+  (if (check :op fs ts)
+    (let [f (prep-fn :op fs (partial def-operator ts))]
+      (bind-fn :op fs f)
+      (vim.api.nvim_set_keymap "n" fs (get-cmd :opn fs) {:noremap true :silent true})
+      (vim.api.nvim_set_keymap "v" fs (get-cmd :opv fs) {:noremap true :silent true}))))
 
 M

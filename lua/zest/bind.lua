@@ -61,9 +61,9 @@ local function get_cmd(kind, id, xt)
     end
     return ("com " .. _1_ .. id .. " :call " .. v_lua .. "(" .. (xt0.args or "") .. ")")
   elseif (_0_ == "opn") then
-    return (":set operator-func=" .. v_lua .. "<cr>g@")
+    return (":set operatorfunc=v:lua.___zest.op." .. esc(id) .. "<cr>g@")
   elseif (_0_ == "opv") then
-    return (":<c-u>call " .. v_lua .. "(visualmode())<cr>")
+    return (":<c-u>call v:lua.___zest.op." .. esc(id) .. "(visualmode())<cr>")
   end
 end
 local function bind(kind, id, f, xt)
@@ -104,21 +104,54 @@ M.au = function(events, pattern, ts)
   return vim.api.nvim_command("augroup END")
 end
 M.ki = function(modes, fs, ts, opts)
-  local kind
-  if opts.expr then
-    kind = "ex"
-  else
-    kind = "ki"
+  if check("ki", fs, ts) then
+    local kind
+    if opts.expr then
+      kind = "ex"
+    else
+      kind = "ki"
+    end
+    local f = prep_fn(kind, fs, ts)
+    for m in string.gmatch(modes, ".") do
+      bind_fn(kind, (m .. "_" .. fs), f)
+      vim.api.nvim_set_keymap(m, fs, get_cmd(kind, (m .. "_" .. fs)), opts)
+    end
+    return nil
   end
-  local f = prep_fn(kind, fs, ts)
-  for m in string.gmatch(modes, ".") do
-    bind_fn(kind, (m .. "_" .. fs), f)
-    vim.api.nvim_set_keymap(m, fs, get_cmd(kind, (m .. "_" .. fs)), opts)
-  end
-  return nil
 end
 M.cm = function(opts, id, ts, xt)
   local cmd = bind("cm", id, ts, xt)
   return vim.api.nvim_command(cmd)
+end
+local function def_operator(f, t)
+  local r = vim.api.nvim_eval("@@")
+  do
+    local _0_ = t
+    if (_0_ == "char") then
+      vim.api.nvim_command(("norm! " .. "`[v`]y"))
+    else
+      local _ = _0_
+      vim.api.nvim_command(("norm! " .. ("`<" .. t .. "`>y")))
+    end
+  end
+  local context = vim.api.nvim_eval("@@")
+  local output = f(context)
+  if output then
+    vim.fn.setreg("@", output, vim.fn.getregtype("@"))
+    vim.api.nvim_command(("norm! " .. "gv\"0p"))
+  end
+  return vim.fn.setreg("@@", r, vim.fn.getregtype("@@"))
+end
+M.op = function(fs, ts)
+  if check("op", fs, ts) then
+    local f
+    local function _0_(...)
+      return def_operator(ts, ...)
+    end
+    f = prep_fn("op", fs, _0_)
+    bind_fn("op", fs, f)
+    vim.api.nvim_set_keymap("n", fs, get_cmd("opn", fs), {noremap = true, silent = true})
+    return vim.api.nvim_set_keymap("v", fs, get_cmd("opv", fs), {noremap = true, silent = true})
+  end
 end
 return M
