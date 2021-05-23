@@ -1,11 +1,11 @@
 local M = {}
 local state = {}
 _G.___zest = {au = {}, cm = {}, ex = {}, ki = {}, op = {}}
-local escapes = {["% "] = "SPACE", ["%!"] = "EXCLAMATION", ["%#"] = "HASH", ["%$"] = "DOLLAR", ["%%"] = "PERCENT", ["%&"] = "AMPERSAND", ["%'"] = "SINGLE_QUOTE", ["%("] = "PARENTHESIS_OPEN", ["%)"] = "PARENTHESIS_CLOSE", ["%*"] = "ASTERISK", ["%+"] = "PLUS", ["%-"] = "DASH", ["%:"] = "COLON", ["%;"] = "SEMICOLON", ["%<"] = "LESS_THAN", ["%="] = "EQUALS", ["%>"] = "GREATER_THAN", ["%@"] = "AT_SIGN", ["%["] = "BRACKET_OPEN", ["%\""] = "DOUBLE_QUOTE", ["%]"] = "BRACKET_CLOSE", ["%^"] = "CAROT", ["%`"] = "BACKTICK", ["%{"] = "CURLYBRACKET_OPEN", ["%}"] = "CURLYBRACKET_CLOSE", ["%~"] = "TILDE"}
+local escapes = {["% "] = "SPACE", ["%!"] = "EXCLAMATION", ["%#"] = "HASH", ["%$"] = "DOLLAR", ["%%"] = "PERCENT", ["%&"] = "AMPERSAND", ["%'"] = "SINGLE_QUOTE", ["%("] = "PARENTHESIS_OPEN", ["%)"] = "PARENTHESIS_CLOSE", ["%*"] = "ASTERISK", ["%+"] = "PLUS", ["%,"] = "COMMA", ["%-"] = "DASH", ["%."] = "PERIOD", ["%/"] = "REVERSE_SLASH", ["%:"] = "COLON", ["%;"] = "SEMICOLON", ["%<"] = "LESS_THAN", ["%="] = "EQUALS", ["%>"] = "GREATER_THAN", ["%?"] = "QUESTION", ["%@"] = "AT_SIGN", ["%["] = "BRACKET_OPEN", ["%\""] = "DOUBLE_QUOTE", ["%\\"] = "SLASH", ["%]"] = "BRACKET_CLOSE", ["%^"] = "CAROT", ["%`"] = "BACKTICK", ["%{"] = "CURLYBRACKET_OPEN", ["%|"] = "BAR_SIGN", ["%}"] = "CURLYBRACKET_CLOSE", ["%~"] = "TILDE"}
 local function esc(s)
   local r = s
   for k, v in pairs(escapes) do
-    r = r:gsub(k, ("___" .. v .. "___"))
+    r = r:gsub(k, ("_z_" .. v .. "_z_"))
   end
   return r
 end
@@ -60,8 +60,10 @@ local function get_cmd(kind, id, xt)
       _1_ = ""
     end
     return ("com " .. _1_ .. id .. " :call " .. v_lua .. "(" .. (xt0.args or "") .. ")")
-  elseif (_0_ == "opn") then
+  elseif (_0_ == "op") then
     return (":set operatorfunc=v:lua.___zest.op." .. esc(id) .. "<cr>g@")
+  elseif (_0_ == "opl") then
+    return (":<c-u>call v:lua.___zest.op." .. esc(id) .. "(v:count1)<cr>")
   elseif (_0_ == "opv") then
     return (":<c-u>call v:lua.___zest.op." .. esc(id) .. "(visualmode())<cr>")
   end
@@ -125,13 +127,26 @@ M.cm = function(opts, id, ts, xt)
 end
 local function def_operator(f, t)
   local r = vim.api.nvim_eval("@@")
+  local t0
+  if tonumber(t) then
+    t0 = "count"
+  else
+    t0 = t
+  end
+  print(t0)
   do
-    local _0_ = t
-    if (_0_ == "char") then
+    local _1_ = t0
+    if (_1_ == "count") then
+      vim.api.nvim_command(("norm! " .. ("V" .. vim.v.count1 .. "$y")))
+    elseif (_1_ == "line") then
+      vim.api.nvim_command(("norm! " .. "`[V`]y"))
+    elseif (_1_ == "block") then
+      vim.api.nvim_command(("norm! " .. "`[<c-v>`]y"))
+    elseif (_1_ == "char") then
       vim.api.nvim_command(("norm! " .. "`[v`]y"))
     else
-      local _ = _0_
-      vim.api.nvim_command(("norm! " .. ("`<" .. t .. "`>y")))
+      local _ = _1_
+      vim.api.nvim_command(("norm! " .. ("`<" .. t0 .. "`>y")))
     end
   end
   local context = vim.api.nvim_eval("@@")
@@ -150,7 +165,8 @@ M.op = function(fs, ts)
     end
     f = prep_fn("op", fs, _0_)
     bind_fn("op", fs, f)
-    vim.api.nvim_set_keymap("n", fs, get_cmd("opn", fs), {noremap = true, silent = true})
+    vim.api.nvim_set_keymap("n", fs, get_cmd("op", fs), {noremap = true, silent = true})
+    vim.api.nvim_set_keymap("n", (fs .. fs), get_cmd("opl", fs), {noremap = true, silent = true})
     return vim.api.nvim_set_keymap("v", fs, get_cmd("opv", fs), {noremap = true, silent = true})
   end
 end

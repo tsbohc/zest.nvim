@@ -35,17 +35,23 @@
    "%-" "DASH"
    "%+" "PLUS"
    "%=" "EQUALS"
+   "%?" "QUESTION"
+   "%." "PERIOD"
+   "%," "COMMA"
    "%~" "TILDE"
    "% " "SPACE"
    "%:" "COLON"
    "%;" "SEMICOLON"
    "%'" "SINGLE_QUOTE"
    "%\"" "DOUBLE_QUOTE"
+   "%/" "REVERSE_SLASH"
+   "%|" "BAR_SIGN"
+   "%\\" "SLASH" ; " quote to calm down syntax hl
    })
 ; }}}
 
 (fn esc [s]
-  (var r s) (each [k v (pairs escapes)] (set r (r:gsub k (.. "___" v "___")))) r)
+  (var r s) (each [k v (pairs escapes)] (set r (r:gsub k (.. "_z_" v "_z_")))) r)
 
 (fn exec-wrapper [kind id f ...]
   (let [(ok? out) (pcall f ...)]
@@ -75,7 +81,8 @@
       :ki  (.. ":call " v-lua "()<cr>")
       :au  (.. ":call " v-lua "()")
       :cm  (.. "com " (if xt.opts (.. xt.opts " ") "") id " :call " v-lua "(" (or xt.args "") ")")
-      :opn (.. ":set operatorfunc=v:lua.___zest.op." (esc id) "<cr>g@")
+      :op  (.. ":set operatorfunc=v:lua.___zest.op." (esc id) "<cr>g@")
+      :opl (.. ":<c-u>call v:lua.___zest.op." (esc id) "(v:count1)<cr>")
       :opv (.. ":<c-u>call v:lua.___zest.op." (esc id) "(visualmode())<cr>"))))
 
 (fn bind [kind id f xt]
@@ -123,10 +130,16 @@
     (vim.api.nvim_command cmd)))
 
 (fn def-operator [f t]
-  (let [r (eval- "@@")]
+  (let [r (eval- "@@")
+        t (if (tonumber t) :count t)]
+    (print t)
+    ; TODO: pass type to function? could be useful
     (match t
-      :char (norm- "`[v`]y")
-      _     (norm- (.. "`<" t "`>y")))
+      :count (norm- (.. "V" vim.v.count1 "$y"))
+      :line  (norm- "`[V`]y")
+      :block (norm- "`[<c-v>`]y")
+      :char  (norm- "`[v`]y")
+      _      (norm- (.. "`<" t "`>y")))
     (let [context (eval- "@@")
           output (f context)]
       (when output
@@ -138,7 +151,9 @@
   (if (check :op fs ts)
     (let [f (prep-fn :op fs (partial def-operator ts))]
       (bind-fn :op fs f)
-      (vim.api.nvim_set_keymap "n" fs (get-cmd :opn fs) {:noremap true :silent true})
-      (vim.api.nvim_set_keymap "v" fs (get-cmd :opv fs) {:noremap true :silent true}))))
+      ; FIXME grab last char for countwise
+      (vim.api.nvim_set_keymap "n" fs         (get-cmd :op  fs) {:noremap true :silent true})
+      (vim.api.nvim_set_keymap "n" (.. fs fs) (get-cmd :opl fs) {:noremap true :silent true})
+      (vim.api.nvim_set_keymap "v" fs         (get-cmd :opv fs) {:noremap true :silent true}))))
 
 M
