@@ -65,9 +65,9 @@
 
 ; au-
 
-(fn au- [events path ts]
+(fn au- [events pattern ts]
   (let [events (table.concat (xs-str events) ",")]
-    `((. (require :zest.bind) :au) ,events ,path ,ts)))
+    `((. (require :zest.bind) :au) ,events ,pattern ,ts)))
 
 ; cm-
 
@@ -113,7 +113,7 @@
 
 (fn norm- [s]
   "execute string 's' as normal mode commands"
-  `(vim.api.nvim_command ,(.. "norm! " s)))
+  `(vim.api.nvim_command (.. "norm! " ,s)))
 
 (fn eval- [s]
   "evaluate string 's' with nvim_eval"

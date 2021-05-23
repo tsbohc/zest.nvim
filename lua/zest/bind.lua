@@ -1,24 +1,20 @@
 local M = {}
-local function escape(s)
-  return s:gsub("[<>]", {["<"] = "\\<", [">"] = "\\>"})
+local state = {}
+_G.___zest = {au = {}, cm = {}, ex = {}, ki = {}, op = {}}
+local escapes = {["% "] = "SPACE", ["%!"] = "EXCLAMATION", ["%#"] = "HASH", ["%$"] = "DOLLAR", ["%%"] = "PERCENT", ["%&"] = "AMPERSAND", ["%'"] = "SINGLE_QUOTE", ["%("] = "PARENTHESIS_OPEN", ["%)"] = "PARENTHESIS_CLOSE", ["%*"] = "ASTERISK", ["%+"] = "PLUS", ["%-"] = "DASH", ["%:"] = "COLON", ["%;"] = "SEMICOLON", ["%<"] = "LESS_THAN", ["%="] = "EQUALS", ["%>"] = "GREATER_THAN", ["%@"] = "AT_SIGN", ["%["] = "BRACKET_OPEN", ["%\""] = "DOUBLE_QUOTE", ["%]"] = "BRACKET_CLOSE", ["%^"] = "CAROT", ["%`"] = "BACKTICK", ["%{"] = "CURLYBRACKET_OPEN", ["%}"] = "CURLYBRACKET_CLOSE", ["%~"] = "TILDE"}
+local function esc(s)
+  local r = s
+  for k, v in pairs(escapes) do
+    r = r:gsub(k, ("___" .. v .. "___"))
+  end
+  return r
 end
-local function un_escape(s)
-  return string.gsub(string.gsub(s, "\\<", "<"), "\\>", ">")
-end
-local state = {au = {}, cm = {}, ki = {}}
-local function bind_21(kind, id, f)
-  local id_esc = escape(id)
-  state[kind][id_esc] = f
-  return ("v:lua.zestExec('" .. kind .. "', '" .. id_esc .. "')")
-end
-_G.zestExec = function(kind, id_esc, ...)
-  local f = state[kind][id_esc]
-  local id = un_escape(id_esc)
-  local ok_3f, result = pcall(f, ...)
+local function exec_wrapper(kind, id, f, ...)
+  local ok_3f, out = pcall(f, ...)
   if not ok_3f then
-    return error(("\nzest." .. kind .. "- error while executing '" .. id .. "':\n" .. result))
+    return print(("\nzest." .. kind .. "- error while executing '" .. id .. "':\n" .. out))
   else
-    return result
+    return out
   end
 end
 local function check(kind, fs, ts)
@@ -36,65 +32,93 @@ local function check(kind, fs, ts)
     return true
   end
 end
-M.cm = function(opts, id, ts, args)
-  if check("cm", id, ts) then
-    local _0_ = type(ts)
+local function prep_fn(kind, id, f)
+  local function _0_(...)
+    return exec_wrapper(kind, id, f, ...)
+  end
+  return _0_
+end
+local function bind_fn(kind, id, f)
+  _G.___zest[kind][esc(id)] = f
+  return nil
+end
+local function get_cmd(kind, id, xt)
+  local xt0 = (xt or {})
+  local v_lua = ("v:lua.___zest." .. kind .. "." .. esc(id))
+  local _0_ = kind
+  if (_0_ == "ex") then
+    return (v_lua .. "()")
+  elseif (_0_ == "ki") then
+    return (":call " .. v_lua .. "()<cr>")
+  elseif (_0_ == "au") then
+    return (":call " .. v_lua .. "()")
+  elseif (_0_ == "cm") then
+    local _1_
+    if xt0.opts then
+      _1_ = (xt0.opts .. " ")
+    else
+      _1_ = ""
+    end
+    return ("com " .. _1_ .. id .. " :call " .. v_lua .. "(" .. (xt0.args or "") .. ")")
+  elseif (_0_ == "opn") then
+    return (":set operator-func=" .. v_lua .. "<cr>g@")
+  elseif (_0_ == "opv") then
+    return (":<c-u>call " .. v_lua .. "(visualmode())<cr>")
+  end
+end
+local function bind(kind, id, f, xt)
+  if check(kind, id, f) then
+    local _0_ = type(f)
     if (_0_ == "function") then
-      local cmd = ("com " .. opts .. " " .. id .. " :call v:lua.zestExec('cm', '" .. id .. "', " .. args .. ")")
-      bind_21("cm", id, ts)
-      return vim.api.nvim_command(cmd)
+      local f0
+      local function _1_(...)
+        return exec_wrapper(kind, id, f, ...)
+      end
+      f0 = _1_
+      local cmd = get_cmd(kind, id, xt)
+      bind_fn(kind, id, f0)
+      return cmd
     elseif (_0_ == "string") then
-      local cmd = ("com " .. opts .. " " .. id .. " " .. ts)
-      return vim.api.nvim_command(cmd)
+      return f
     end
   end
 end
-local au_id = 0
-local function au_uid()
-  au_id = (1 + au_id)
-  return ("au_" .. au_id)
-end
-M.au = function(events, path, ts)
-  if check("au", "<new-au>", ts) then
-    local _0_ = type(ts)
-    if (_0_ == "function") then
-      local id = au_uid()
-      local ex = (":call " .. bind_21("au", id, ts))
-      local body = ("au " .. events .. " " .. path .. " " .. ex)
-      vim.api.nvim_command(("augroup " .. id))
-      vim.api.nvim_command("autocmd!")
-      vim.api.nvim_command(body)
-      return vim.api.nvim_command("augroup end")
-    elseif (_0_ == "string") then
-      local id = au_uid()
-      local body = ("au " .. events .. " " .. path .. " " .. ts)
-      vim.api.nvim_command(("augroup " .. id))
-      vim.api.nvim_command("autocmd!")
-      vim.api.nvim_command(body)
-      return vim.api.nvim_command("augroup end")
-    end
+local function count_au()
+  local r = 0
+  for _, _0 in pairs(_G.___zest.au) do
+    r = (1 + r)
   end
+  return r
+end
+M.au = function(events, pattern, ts)
+  if not state["au-initialised?"] then
+    vim.api.nvim_command("augroup zestautocommands")
+    vim.api.nvim_command("autocmd!")
+    vim.api.nvim_command("augroup END")
+    state["au-initialised?"] = true
+  end
+  local cmd = bind("au", ("_" .. count_au()), ts)
+  local body = ("au " .. events .. " " .. pattern .. " " .. cmd)
+  vim.api.nvim_command("augroup zestautocommands")
+  vim.api.nvim_command(body)
+  return vim.api.nvim_command("augroup END")
 end
 M.ki = function(modes, fs, ts, opts)
-  if check("ki", fs, ts) then
-    local _0_ = type(ts)
-    if (_0_ == "function") then
-      local ex
-      if opts.expr then
-        ex = bind_21("ki", fs, ts)
-      else
-        ex = (":call " .. bind_21("ki", fs, ts) .. "<cr>")
-      end
-      for m in string.gmatch(modes, ".") do
-        vim.api.nvim_set_keymap(m, fs, ex, opts)
-      end
-      return nil
-    elseif (_0_ == "string") then
-      for m in string.gmatch(modes, ".") do
-        vim.api.nvim_set_keymap(m, fs, ts, opts)
-      end
-      return nil
-    end
+  local kind
+  if opts.expr then
+    kind = "ex"
+  else
+    kind = "ki"
   end
+  local f = prep_fn(kind, fs, ts)
+  for m in string.gmatch(modes, ".") do
+    bind_fn(kind, (m .. "_" .. fs), f)
+    vim.api.nvim_set_keymap(m, fs, get_cmd(kind, (m .. "_" .. fs)), opts)
+  end
+  return nil
+end
+M.cm = function(opts, id, ts, xt)
+  local cmd = bind("cm", id, ts, xt)
+  return vim.api.nvim_command(cmd)
 end
 return M

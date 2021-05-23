@@ -1,24 +1,49 @@
 (local M {})
+(local state {})
 
-(fn escape [s] (s:gsub "[<>]" {:< "\\<" :> "\\>"}))
-(fn un-escape [s] (string.gsub (string.gsub s "\\<" "<") "\\>" ">"))
+; we're storing them in _G for operator-func compatibility of the wrapper
+(set _G.___zest {:ex {} :ki {} :au {} :cm {} :op {}})
 
-(local state {:ki {} :cm {} :au {}})
+; {{{
+; v:lua doesn't support ["id"] syntax, so... yeah
+(local escapes
+  {"%<" "LESS_THAN"
+   "%>" "GREATER_THAN"
+   "%`" "BACKTICK"
+   "%!" "EXCLAMATION"
+   "%@" "AT_SIGN"
+   "%#" "HASH"
+   "%$" "DOLLAR"
+   "%%" "PERCENT"
+   "%^" "CAROT"
+   "%&" "AMPERSAND"
+   "%*" "ASTERISK"
+   "%(" "PARENTHESIS_OPEN"
+   "%)" "PARENTHESIS_CLOSE"
+   "%[" "BRACKET_OPEN"
+   "%]" "BRACKET_CLOSE"
+   "%{" "CURLYBRACKET_OPEN"
+   "%}" "CURLYBRACKET_CLOSE"
+   "%-" "DASH"
+   "%+" "PLUS"
+   "%=" "EQUALS"
+   "%~" "TILDE"
+   "% " "SPACE"
+   "%:" "COLON"
+   "%;" "SEMICOLON"
+   "%'" "SINGLE_QUOTE"
+   "%\"" "DOUBLE_QUOTE"
+   })
+; }}}
 
-(fn bind! [kind id f]
-  "cache function and return the respective ex command"
-  (let [id-esc (escape id)]
-    (tset (. state kind) id-esc f)
-    (.. "v:lua.zestExec('" kind "', '" id-esc "')")))
+(fn esc [s]
+  (var r s) (each [k v (pairs escapes)] (set r (r:gsub k (.. "___" v "___")))) r)
 
-(fn _G.zestExec [kind id-esc ...]
-  "execute function cached by zest"
-  (let [f (. (. state kind) id-esc)
-        id (un-escape id-esc)
-        (ok? result) (pcall f ...)]
+(fn exec-wrapper [kind id f ...]
+  (let [(ok? out) (pcall f ...)]
     (if (not ok?)
-      (error (.. "\nzest." kind "- error while executing '" id "':\n" result))
-      result)))
+      (print (.. "\nzest." kind "- error while executing '" id "':\n" out))
+      out)))
 
 (fn check [kind fs ts]
   "handle nil errors during binding"
@@ -28,53 +53,67 @@
     [nil  y ] (print (.. "zest." kind "- attempt to bind '" (tostring ts) "' to nil!"))
     _ true))
 
-(fn M.cm [opts id ts args]
-  "bind ex commands"
-  (if (check :cm id ts)
-    (match (type ts)
+(fn prep-fn [kind id f]
+  (partial exec-wrapper kind id f))
+
+(fn bind-fn [kind id f]
+  (tset _G.___zest kind (esc id) f))
+
+(fn get-cmd [kind id xt]
+  (let [xt (or xt {})
+        v-lua (.. "v:lua.___zest." kind "." (esc id))]
+    (match kind
+      :ex  (.. v-lua "()")
+      :ki  (.. ":call " v-lua "()<cr>")
+      :au  (.. ":call " v-lua "()")
+      :cm  (.. "com " (if xt.opts (.. xt.opts " ") "") id " :call " v-lua "(" (or xt.args "") ")")
+      :opn (.. ":set operator-func=" v-lua "<cr>g@")
+      :opv (.. ":<c-u>call " v-lua "(visualmode())<cr>"))))
+
+(fn bind [kind id f xt]
+  (if (check kind id f)
+    (match (type f)
       :function
-      (let [cmd (.. "com " opts " " id " :call v:lua.zestExec('cm', '" id "', " args ")")]
-        (bind! :cm id ts)
-        (vim.api.nvim_command cmd))
-      :string
-      (let [cmd (.. "com " opts " " id " " ts)]
-        (vim.api.nvim_command cmd)))))
+      (let [f (partial exec-wrapper kind id f)
+            cmd (get-cmd kind id xt)]
+        (bind-fn kind id f)
+        cmd)
+      :string f)))
 
-(var au-id 0)
+(fn count-au []
+  (var r 0)
+  (each [_ _ (pairs _G.___zest.au)]
+    (set r (+ 1 r)))
+  r)
 
-(fn au-uid []
-  (set au-id (+ 1 au-id))
-  (.. "au_" au-id))
+(fn M.au [events pattern ts]
+  (when (not state.au-initialised?)
+    (vim.api.nvim_command "augroup zestautocommands")
+    (vim.api.nvim_command "autocmd!")
+    (vim.api.nvim_command "augroup END")
+    (set state.au-initialised? true))
+  (let [cmd (bind :au (.. "_" (count-au)) ts)
+        body (.. "au " events " " pattern " " cmd)]
+    (vim.api.nvim_command "augroup zestautocommands")
+    (vim.api.nvim_command body)
+    (vim.api.nvim_command "augroup END")))
 
-(fn M.au [events path ts]
-  (if (check :au "<new-au>" ts)
-    (match (type ts)
-      :function
-      (let [id (au-uid)
-            ex (.. ":call " (bind! :au id ts))
-            body (.. "au " events " " path " " ex)]
-        (vim.api.nvim_command (.. "augroup " id))
-        (vim.api.nvim_command "autocmd!")
-        (vim.api.nvim_command body)
-        (vim.api.nvim_command "augroup end"))
-      :string
-      (let [id (au-uid)
-            body (.. "au " events " " path " " ts)]
-        (vim.api.nvim_command (.. "augroup " id))
-        (vim.api.nvim_command "autocmd!")
-        (vim.api.nvim_command body)
-        (vim.api.nvim_command "augroup end")))))
-
+; TODO preprocess modes into a seq
+; we need to store the fn per mode so that a different functins may be bound to the same fs in other modes
 (fn M.ki [modes fs ts opts]
-  "bind keymaps"
-  (if (check :ki fs ts)
-    (match (type ts)
-      :function
-      (let [ex (if (. opts :expr) (bind! :ki fs ts) (.. ":call " (bind! :ki fs ts) "<cr>"))]
-        (each [m (string.gmatch modes ".")]
-          (vim.api.nvim_set_keymap m fs ex opts)))
-      :string
-      (each [m (string.gmatch modes ".")]
-        (vim.api.nvim_set_keymap m fs ts opts)))))
+  "define keybinds"
+  (let [kind (if opts.expr :ex :ki)
+        f (prep-fn kind fs ts)]
+    (each [m (string.gmatch modes ".")]
+      (bind-fn kind (.. m "_" fs) f)
+      (vim.api.nvim_set_keymap m fs (get-cmd kind (.. m "_" fs)) opts))))
+
+(fn M.cm [opts id ts xt]
+  "define ex commands"
+  (let [cmd (bind :cm id ts xt)]
+    (vim.api.nvim_command cmd)))
+
+; normal-mode -- :set operator-func=v:lua.<id><cr>g@
+; visual-mode -- :<c-u>call v:lua.<id>(visualmode())<cr>
 
 M
