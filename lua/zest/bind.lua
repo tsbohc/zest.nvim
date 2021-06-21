@@ -1,13 +1,13 @@
 local M = {}
 local state = {}
-_G.___zest = {au = {}, cm = {}, ex = {}, ki = {}, op = {}}
+_G.___zest = {au = {}, cm = {}, ex = {}, ki = {}, op = {}, te = {}}
 local escapes = {["% "] = "SPACE", ["%!"] = "EXCLAMATION", ["%#"] = "HASH", ["%$"] = "DOLLAR", ["%%"] = "PERCENT", ["%&"] = "AMPERSAND", ["%'"] = "SINGLE_QUOTE", ["%("] = "PARENTHESIS_OPEN", ["%)"] = "PARENTHESIS_CLOSE", ["%*"] = "ASTERISK", ["%+"] = "PLUS", ["%,"] = "COMMA", ["%-"] = "DASH", ["%."] = "PERIOD", ["%/"] = "REVERSE_SLASH", ["%:"] = "COLON", ["%;"] = "SEMICOLON", ["%<"] = "LESS_THAN", ["%="] = "EQUALS", ["%>"] = "GREATER_THAN", ["%?"] = "QUESTION", ["%@"] = "AT_SIGN", ["%["] = "BRACKET_OPEN", ["%\""] = "DOUBLE_QUOTE", ["%\\"] = "SLASH", ["%]"] = "BRACKET_CLOSE", ["%^"] = "CAROT", ["%`"] = "BACKTICK", ["%{"] = "CURLYBRACKET_OPEN", ["%|"] = "BAR_SIGN", ["%}"] = "CURLYBRACKET_CLOSE", ["%~"] = "TILDE"}
 local function esc(s)
   local r = s
   for k, v in pairs(escapes) do
     r = r:gsub(k, ("_z_" .. v .. "_z_"))
   end
-  return r
+  return ("_" .. r)
 end
 local function exec_wrapper(kind, id, f, ...)
   local ok_3f, out = pcall(f, ...)
@@ -60,6 +60,8 @@ local function get_cmd(kind, id, xt)
       _1_ = ""
     end
     return ("com " .. _1_ .. id .. " :call " .. v_lua .. "(" .. (xt0.args or "") .. ")")
+  elseif (_0_ == "te") then
+    return (":<c-u>call v:lua.___zest.te." .. esc(id) .. "()<cr>")
   elseif (_0_ == "op") then
     return (":set operatorfunc=v:lua.___zest.op." .. esc(id) .. "<cr>g@")
   elseif (_0_ == "opl") then
@@ -125,6 +127,19 @@ M.cm = function(opts, id, ts, xt)
   local cmd = bind("cm", id, ts, xt)
   return vim.api.nvim_command(cmd)
 end
+M.te = function(fs, ts)
+  if check("te", fs, ts) then
+    local _0_ = type(ts)
+    if (_0_ == "function") then
+      local cmd = bind("te", fs, ts)
+      vim.api.nvim_set_keymap("o", fs, cmd, {noremap = true, silent = true})
+      return vim.api.nvim_set_keymap("x", fs, cmd, {noremap = true, silent = true})
+    elseif (_0_ == "string") then
+      vim.api.nvim_set_keymap("o", fs, (":<c-u>norm! " .. ts .. "<cr>"), {noremap = true, silent = true})
+      return vim.api.nvim_set_keymap("x", fs, (":<c-u>norm! " .. ts .. "<cr>"), {noremap = true, silent = true})
+    end
+  end
+end
 local function def_operator(f, t)
   local r = vim.api.nvim_eval("@@")
   local t0
@@ -133,7 +148,6 @@ local function def_operator(f, t)
   else
     t0 = t
   end
-  print(t0)
   do
     local _1_ = t0
     if (_1_ == "count") then
@@ -150,7 +164,7 @@ local function def_operator(f, t)
     end
   end
   local context = vim.api.nvim_eval("@@")
-  local output = f(context)
+  local output = f(context, t0)
   if output then
     vim.fn.setreg("@", output, vim.fn.getregtype("@"))
     vim.api.nvim_command(("norm! " .. "gv\"0p"))
@@ -166,7 +180,7 @@ M.op = function(fs, ts)
     f = prep_fn("op", fs, _0_)
     bind_fn("op", fs, f)
     vim.api.nvim_set_keymap("n", fs, get_cmd("op", fs), {noremap = true, silent = true})
-    vim.api.nvim_set_keymap("n", (fs .. fs), get_cmd("opl", fs), {noremap = true, silent = true})
+    vim.api.nvim_set_keymap("n", (fs .. fs:sub(-1)), get_cmd("opl", fs), {noremap = true, silent = true})
     return vim.api.nvim_set_keymap("v", fs, get_cmd("opv", fs), {noremap = true, silent = true})
   end
 end

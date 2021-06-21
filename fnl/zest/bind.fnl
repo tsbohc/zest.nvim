@@ -7,10 +7,11 @@
 ; store commands applied to functions in state too
 
 ; FIXME
+; manual binding doesn't work on strings
 ; binding to percent sign is potentially broken for some reason
 
 ; we're storing them in _G for operator-func compatibility of the wrapper
-(set _G.___zest {:ex {} :ki {} :au {} :cm {} :op {}})
+(set _G.___zest {:ex {} :ki {} :au {} :cm {} :te {} :op {}})
 
 ; {{{
 ; v:lua doesn't support ["id"] syntax, so... yeah
@@ -51,7 +52,8 @@
 ; }}}
 
 (fn esc [s]
-  (var r s) (each [k v (pairs escapes)] (set r (r:gsub k (.. "_z_" v "_z_")))) r)
+  ; we prefix function names to escape unfortunate matches with builtin functions in v:lua, vim complains about ".if(" in variable for some reason?
+  (var r s) (each [k v (pairs escapes)] (set r (r:gsub k (.. "_z_" v "_z_")))) (.. "_" r))
 
 (fn exec-wrapper [kind id f ...]
   (let [(ok? out) (pcall f ...)]
@@ -81,6 +83,7 @@
       :ki  (.. ":call " v-lua "()<cr>")
       :au  (.. ":call " v-lua "()")
       :cm  (.. "com " (if xt.opts (.. xt.opts " ") "") id " :call " v-lua "(" (or xt.args "") ")")
+      :te (.. ":<c-u>call v:lua.___zest.te." (esc id) "()<cr>")
       :op  (.. ":set operatorfunc=v:lua.___zest.op." (esc id) "<cr>g@")
       :opl (.. ":<c-u>call v:lua.___zest.op." (esc id) "(v:count1)<cr>")
       :opv (.. ":<c-u>call v:lua.___zest.op." (esc id) "(visualmode())<cr>"))))
@@ -129,10 +132,26 @@
   (let [cmd (bind :cm id ts xt)]
     (vim.api.nvim_command cmd)))
 
+; (fn def-text-object [f]
+;   (let [out (f)]
+;     (when out (vim.api.nvim_command (.. "norm! " out)))))
+
+(fn M.te [fs ts]
+  "define text object"
+  (if (check :te fs ts)
+    (match (type ts)
+      :function
+      (let [cmd (bind :te fs ts)]
+        (vim.api.nvim_set_keymap "o" fs cmd {:noremap true :silent true})
+        (vim.api.nvim_set_keymap "x" fs cmd {:noremap true :silent true}))
+      :string
+      (do
+        (vim.api.nvim_set_keymap "o" fs (.. ":<c-u>norm! " ts "<cr>") {:noremap true :silent true})
+        (vim.api.nvim_set_keymap "x" fs (.. ":<c-u>norm! " ts "<cr>") {:noremap true :silent true})))))
+
 (fn def-operator [f t]
   (let [r (eval- "@@")
         t (if (tonumber t) :count t)]
-    (print t)
     ; TODO: pass type to function? could be useful
     (match t
       :count (norm- (.. "V" vim.v.count1 "$y"))
@@ -141,19 +160,19 @@
       :char  (norm- "`[v`]y")
       _      (norm- (.. "`<" t "`>y")))
     (let [context (eval- "@@")
-          output (f context)]
+          output (f context t)]
       (when output
         (vim.fn.setreg "@" output (vim.fn.getregtype "@"))
         (norm- "gv\"0p"))
       (vim.fn.setreg "@@" r (vim.fn.getregtype "@@")))))
 
 (fn M.op [fs ts]
+  "define custom operator"
   (if (check :op fs ts)
     (let [f (prep-fn :op fs (partial def-operator ts))]
       (bind-fn :op fs f)
-      ; FIXME grab last char for countwise
-      (vim.api.nvim_set_keymap "n" fs         (get-cmd :op  fs) {:noremap true :silent true})
-      (vim.api.nvim_set_keymap "n" (.. fs fs) (get-cmd :opl fs) {:noremap true :silent true})
-      (vim.api.nvim_set_keymap "v" fs         (get-cmd :opv fs) {:noremap true :silent true}))))
+      (vim.api.nvim_set_keymap "n" fs                  (get-cmd :op  fs) {:noremap true :silent true})
+      (vim.api.nvim_set_keymap "n" (.. fs (fs:sub -1)) (get-cmd :opl fs) {:noremap true :silent true})
+      (vim.api.nvim_set_keymap "v" fs                  (get-cmd :opv fs) {:noremap true :silent true}))))
 
 M

@@ -33,6 +33,28 @@
             (se- (key:sub 3) false)
             (print (.. "<zest:se> invalid option '" key "'"))))))
 
+; opt-
+
+(fn opt-get [key]
+  ; since :get errors out on unset options, here's an ugly thing
+  (let [key (tostring key)]
+    `(let [(ok?# val#) (pcall (fn [] (: (. vim.opt ,key) :get)))]
+       (if ok?# val# nil))))
+
+(fn so- [key val]
+  (let [key (tostring key)
+        val (if (= nil val) true val)
+        dec (key:sub -1)
+        clean-key (key:sub 1 -2)
+        opt `(. vim.opt ,clean-key)]
+    (match dec
+      "?" `(opt-get ,clean-key)
+      "!" `(tset vim.opt ,clean-key (not (opt-get ,clean-key)))
+      "+" `(: ,opt :append  ,val)
+      "-" `(: ,opt :remove  ,val)
+      "^" `(: ,opt :prepend ,val)
+      _   `(tset vim.opt ,key ,val))))
+
 ; li- & ki-
 
 (fn keymap-options [args]
@@ -62,6 +84,11 @@
     (if (> (# out) 1)
       `(do ,(unpack out))
       `,(unpack out))))
+
+; te-
+
+(fn te- [fs ts]
+  `((. (require :zest.bind) :te) ,fs ,ts))
 
 ; op-
 
@@ -140,9 +167,12 @@
   "set 'k' to 'v' on vim.g table"
   `(tset vim.g ,(tostring k) ,v))
 
-{: se-
+{: so-
+ : opt-get
+ : se-
  : li-
  : ki-
+ : te-
  : op-
  : au-
  : cm-
