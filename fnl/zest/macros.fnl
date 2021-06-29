@@ -16,6 +16,14 @@
       (table.insert r `,(tostring (. xs i))))
     r))
 
+(fn pxt-str [...]
+  "convert unpacked dict of symbols '...' to a dict of strings"
+  (let [rt {}]
+    (for [i 1 (# [...])]
+      (if (not= (% i 2) 0)
+        (tset rt `,(tostring (. [...] i)) `,(tostring (. [...] (+ i 1))))))
+    rt))
+
 ; se-
 
 (fn se- [key val]
@@ -67,6 +75,33 @@
         (tset opts :noremap false)
         (tset opts o true)))
     (values modes opts)))
+
+(fn keymap-definitions [literal? ...]
+  (let [xs [...]
+        dstr (when (= (% (# xs) 2) 1) (table.remove xs 1))
+        rt {}]
+    (for [i 1 (# xs)]
+      (if (not= (% i 2) 0)
+        (if literal?
+          (tset rt `,(tostring (. xs i)) `,(tostring (. xs (+ i 1))))
+          (tset rt (. xs i) (. xs (+ i 1))))))
+    rt))
+
+(fn def-keymap [args ...]
+  ; TODO also do unpack into a macro
+  (let [(modes opts) (keymap-options args)
+        literal? (when (. opts :l) (tset opts :l nil) true)
+        xt (keymap-definitions literal? ...)
+        rs []]
+    (table.insert rs `"--arost")
+    (each [fs ts (pairs xt)]
+      (if literal?
+        (each [m (string.gmatch modes ".")]
+          (table.insert rs `(vim.api.nvim_set_keymap ,m ,fs ,ts ,opts)))
+        (table.insert rs `((. (require :zest.bind) :ki) ,modes ,fs ,ts ,opts))))
+    (if (> (# rs) 1)
+      `(do ,(unpack rs))
+      `,(unpack rs))))
 
 (fn ki- [args fs ts]
   "bind 'fs' to 'ts' by reference via runtime evaluation"
@@ -168,6 +203,7 @@
   `(tset vim.g ,(tostring k) ,v))
 
 {: so-
+ : def-keymap
  : opt-get
  : se-
  : li-
