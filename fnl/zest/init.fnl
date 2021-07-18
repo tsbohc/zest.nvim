@@ -1,6 +1,10 @@
 (local fs (require :zest.fs))
 (local co (require :zest.core))
 
+
+(tset _G :__ZEEEST {})
+(tset _G.__ZEEEST :ki {})
+
 (local M {})
 
 (var initialised? false)

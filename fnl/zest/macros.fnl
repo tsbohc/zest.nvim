@@ -202,7 +202,92 @@
   "set 'k' to 'v' on vim.g table"
   `(tset vim.g ,(tostring k) ,v))
 
-{: so-
+; new ways
+
+(fn ___escape [s]
+  (let [escapes
+        {"%<" "LESS_THAN"
+         "%>" "GREATER_THAN"
+         "%`" "BACKTICK"
+         "%!" "EXCLAMATION"
+         "%@" "AT_SIGN"
+         "%#" "HASH"
+         "%$" "DOLLAR"
+         "%%" "PERCENT"
+         "%^" "CAROT"
+         "%&" "AMPERSAND"
+         "%*" "ASTERISK"
+         "%(" "PARENTHESIS_OPEN"
+         "%)" "PARENTHESIS_CLOSE"
+         "%[" "BRACKET_OPEN"
+         "%]" "BRACKET_CLOSE"
+         "%{" "CURLYBRACKET_OPEN"
+         "%}" "CURLYBRACKET_CLOSE"
+         "%-" "DASH"
+         "%+" "PLUS"
+         "%=" "EQUALS"
+         "%?" "QUESTION"
+         "%." "PERIOD"
+         "%," "COMMA"
+         "%~" "TILDE"
+         "% " "SPACE"
+         "%:" "COLON"
+         "%;" "SEMICOLON"
+         "%'" "SINGLE_QUOTE"
+         "%\"" "DOUBLE_QUOTE"
+         "%/" "REVERSE_SLASH"
+         "%|" "BAR_SIGN"
+         "%\\" "SLASH" ; " quote to calm down syntax hl
+         }]
+    (var r s)
+    (each [k v (pairs escapes)]
+      (set r (r:gsub k (.. "_z_" v "_z_"))))
+    (.. "_" r)))
+
+; FIXME broken currently
+(fn ___wrap [f fs]
+  `(fn []
+     (let [(ok?# out#) (pcall ,f)]
+       (if (not ok?#)
+         (print (.. "\n zest.ki-fn: error while executing '" ,fs "':\n" out#))
+         out#))))
+
+(fn xs-str [xs]
+  "convert seq of symbols 'xs' to a seq of strings"
+  (let [r []]
+    (for [i 1 (# xs)]
+      (table.insert r `,(tostring (. xs i))))
+    r))
+
+(fn ___keymap-options [args]
+  "convert seq of options 'args' to modes string and keymap option dict"
+  (let [modes (tostring (table.remove args 1))
+        opts-xs (xs-str args)
+        opts {:noremap true}]
+    (each [_ o (ipairs opts-xs)]
+      (if (= o :remap)
+        (tset opts :noremap false)
+        (tset opts o true)))
+    (values modes opts)))
+
+(fn ki-fn [fs args ...]
+  (let [(modes opts) (___keymap-options args)
+        id (___escape fs)
+        p `(fn [] ,...)
+        ;p (___wrap f fs)
+        ts (if opts.expr
+             (.. "v:lua.__ZEEEST.ki." id "()")
+             (.. ":call v:lua.__ZEEEST.ki." id "()<cr>"))
+        out []]
+    (each [m (string.gmatch modes ".")]
+      (table.insert out `(vim.api.nvim_set_keymap ,m ,fs ,ts ,opts)))
+    `(do
+       (tset _G.__ZEEEST.ki ,id ,p)
+       ,(unpack out)
+       )))
+
+{: ki-fn
+ : so-
  : def-keymap
  : opt-get
  : se-

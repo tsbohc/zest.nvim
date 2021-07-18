@@ -1,5 +1,7 @@
 local fs = require("zest.fs")
 local co = require("zest.core")
+_G["__ZEEEST"] = {}
+_G.__ZEEEST["ki"] = {}
 local M = {}
 local initialised_3f = false
 local function get_rtp()
