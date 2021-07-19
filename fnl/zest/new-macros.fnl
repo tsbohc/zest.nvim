@@ -113,7 +113,7 @@
     `(do
        (vim.api.nvim_command (.. "augroup " ,name))
        ,(unpack out)
-       ,(do ...)
+       (do ,...)
        (vim.api.nvim_command (.. "augroup END")))))
 
 (fn M.def-augroup [name ...]
@@ -136,5 +136,20 @@
        (vim.api.nvim_command ,(.. "au " events " " pattern " " ts)))))
 
 ;(fn M.keymap-leader [])
+
+; packer
+
+(fn M.packer-use-wrapper [repo opts]
+  (let [xt [repo]]
+    (when opts
+      (each [k v (pairs opts)]
+        (tset xt k v)))
+    `(use ,xt)))
+
+; neovim api
+
+(fn M.let-g [k v]
+  "set 'k' to 'v' on vim.g table"
+  `(tset vim.g ,(tostring k) ,v))
 
 M

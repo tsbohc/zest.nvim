@@ -12,29 +12,25 @@ The plugin can be installed on its own or together with [aniseed](https://github
 
 <b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me at @tsbohc on the aniseed discord.
 
-For an up-to-date full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl).
-
 ## usage
 
-Install with your favourite package manager.
+- install with your favourite package manager
+```clojure
+(use :tsbohc/zest.nvim)
+(let [z (require :zest)] (z.setup))
+```
 
-- require all macros
+- import macros, renaming them as you wish
 ```clojure
-(require-macros :zest.macros)
+(import-macros {:zest-macro my-alias} :zest.macros)
 ```
-- or import macros selectively, with renaming support
-```clojure
-(import-macros {:def-autocmd au-} :zest.macros)
-```
+
+For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl).
 
 ## macros
 In each example, the top block contains the fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
 
-<b>NOTE</b> macros below are currently available under `zest.new-macros`, but require some globals:
-```clojure
-(tset _G :ZEST (or _G.ZEST {:keymap  {} :autocmd {}}))
-```
-Will fix this later today.
+<b>NOTE</b> macros below are currently available under `zest.new-macros`
 
 ## options
 
@@ -47,6 +43,7 @@ Will fix this later today.
 ## keymaps
 
 ### def-keymap
+- to disable `noremap`, include `:remap` after the modes
 
 - map literals:
 ```clojure
@@ -86,8 +83,6 @@ do
   vim.api.nvim_set_keymap("n", "<c-n>", "<c-w>j", {noremap = true})
 end
 ```
-
-- to disable `noremap`, include `:remap` after the specifying modes
 
 ### def-keymap-fn
 - define a function and map it to a key
@@ -195,7 +190,7 @@ end
 
 <hr>
 
-# soon be deprecated:
+# soon to be deprecated:
 
 ### se-
 - viml-esque set option
