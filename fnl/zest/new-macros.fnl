@@ -48,14 +48,20 @@
     (values modes opts)))
 
 (fn encode-special [s]
-  (s:gsub "%W" (fn [c] (string.format "_%02X_" (string.byte c)))))
+  (.. "_" (s:gsub "%W" (fn [c] (string.format "_%02X_" (string.byte c))))))
 
 ; FIXME creates duplicates of the character function every time ,id is used
 ; not sure if that big of a deal since it only affects function mappping to variables or expressions
 (fn encode-special-macro [s]
-  `(string.gsub ,s "%W" (fn [c#] (string.format "_%02X_" (string.byte c#)))))
+  `(.. "_" (string.gsub ,s "%W" (fn [c#] (string.format "_%02X_" (string.byte c#))))))
 
-(fn M.keymap-function [fs args ...]
+(fn hash [s]
+  (var h 0)
+  (each [c (string.gmatch s ".")]
+    (set h (+ (* 31 h) (string.byte c))))
+  h)
+
+(fn M.def-keymap-fn [fs args ...]
   (let [(modes opts) (keymap-options args)
         f `(fn [] ,...)
         id (if (= (type fs) :string)
@@ -71,7 +77,7 @@
        (tset _G :ZEST :keymap ,id ,f)
        (do ,(unpack out)))))
 
-(fn M.keymap-normal [...]
+(fn M.def-keymap [...]
   (match (# [...])
     3 (let [(fs args ts) (unpack [...])
             (modes opts) (keymap-options args)
@@ -89,13 +95,45 @@
         `(do
            ,(unpack out)))))
 
-(fn M.keymap-literal [fs args ts]
-  (let [(modes opts) (keymap-options args)
-        out []]
-    (each [m (string.gmatch modes ".")]
-      (table.insert out `(vim.api.nvim_set_keymap ,m ,(tostring fs) ,(tostring ts) ,opts)))
+; NOTE deprecating literal binding
+;(fn M.keymap-literal [fs args ts]
+;  (let [(modes opts) (keymap-options args)
+;        out []]
+;    (each [m (string.gmatch modes ".")]
+;      (table.insert out `(vim.api.nvim_set_keymap ,m ,(tostring fs) ,(tostring ts) ,opts)))
+;    `(do
+;       ,(unpack out))))
+
+; autocmd
+
+(fn _create-augroup [clear? name ...]
+  (let [out []]
+    (when clear?
+      (table.insert out `(vim.api.nvim_command "autocmd!")))
     `(do
-       ,(unpack out))))
+       (vim.api.nvim_command (.. "augroup " ,name))
+       ,(unpack out)
+       ,(do ...)
+       (vim.api.nvim_command (.. "augroup END")))))
+
+(fn M.def-augroup [name ...]
+  (_create-augroup true name ...))
+
+(fn M.def-augroup-dirty [name ...]
+  (_create-augroup false name ...))
+
+(fn M.def-autocmd [pattern events ts]
+  (let [events (table.concat (xs-str events) ",")]
+    `(vim.api.nvim_command (.. "au " ,events " " ,pattern " " ,ts))))
+
+(fn M.def-autocmd-fn [pattern events ...]
+  (let [events (table.concat (xs-str events) ",")
+        f `(fn [] ,...)
+        id `,(encode-special (.. (hash (tostring ...)) "_" pattern "_" events))
+        ts `,(.. ":call v:lua.ZEST.autocmd." id "()")]
+    `(do
+       (tset _G :ZEST :autocmd ,id ,f)
+       (vim.api.nvim_command ,(.. "au " events " " pattern " " ts)))))
 
 ;(fn M.keymap-leader [])
 
