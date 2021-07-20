@@ -11,18 +11,18 @@
 
 (fn M.zest-setup []
   `(do
-     (tset _G :ZEST {})
-     (tset _G :ZEST :keymap {})))
+     (tset _G :_zest {})
+     (tset _G :_zest :keymap {})))
 
 ; setoption
 
-(fn opt-get [key]
-  ; :get errors out on unset options, so here's an ugly thing
+(fn M.get-option [key]
+  ; FIXME opt:get errors out on unset options, so here's an ugly thing
   (let [key (tostring key)]
     `(let [(ok?# val#) (pcall (fn [] (: (. vim.opt ,key) :get)))]
        (if ok?# val# nil))))
 
-(fn M.setoption [key val]
+(fn M.set-option [key val]
   (let [key (tostring key)
         val (if (= nil val) true val)
         (key act) (if (key:find ":")
@@ -48,13 +48,14 @@
     (values modes opts)))
 
 (fn encode-special [s]
-  (.. "_" (s:gsub "%W" (fn [c] (string.format "_%02X_" (string.byte c))))))
+  (.. "_" (string.gsub (tostring s) "%W" (fn [c] (string.format "_%02X_" (string.byte c))))))
 
 ; FIXME creates duplicates of the character function every time ,id is used
 ; not sure if that big of a deal since it only affects function mappping to variables or expressions
 (fn encode-special-macro [s]
   `(.. "_" (string.gsub ,s "%W" (fn [c#] (string.format "_%02X_" (string.byte c#))))))
 
+; FIXME broken, generates new id every time?
 (fn hash [s]
   (var h 0)
   (each [c (string.gmatch s ".")]
@@ -68,13 +69,13 @@
              (encode-special fs)
              `,(encode-special-macro fs))
         ts (if opts.expr
-             `(.. "v:lua.ZEST.keymap." ,id "()")
-             `(.. ":call v:lua.ZEST.keymap." ,id "()<cr>"))
+             `(.. "v:lua._zest.keymap." ,id "()")
+             `(.. ":call v:lua._zest.keymap." ,id "()<cr>"))
         out []]
     (each [m (string.gmatch modes ".")]
       (table.insert out `(vim.api.nvim_set_keymap ,m ,fs ,ts ,opts)))
     `(do
-       (tset _G :ZEST :keymap ,id ,f)
+       (tset _G :_zest :keymap ,id ,f)
        (do ,(unpack out)))))
 
 (fn M.def-keymap [...]
@@ -126,22 +127,55 @@
   (let [events (table.concat (xs-str events) ",")]
     `(vim.api.nvim_command (.. "au " ,events " " ,pattern " " ,ts))))
 
+; NOTE this will add a new batch of autocmd functions when a file is recompiled
+; but they will crear up when vim is reopened
+(var au-id 0)
+
 (fn M.def-autocmd-fn [pattern events ...]
   (let [events (table.concat (xs-str events) ",")
         f `(fn [] ,...)
-        id `,(encode-special (.. (hash (tostring ...)) "_" pattern "_" events))
-        ts `,(.. ":call v:lua.ZEST.autocmd." id "()")]
+        ;id `,(encode-special (.. (hash (: (tostring ...) :gsub "table: %S+ " "")) "_" pattern))
+        id (.. "_au_" au-id)
+        ts `,(.. ":call v:lua._zest.autocmd." id "()")]
+    (set au-id (+ au-id 1))
     `(do
-       (tset _G :ZEST :autocmd ,id ,f)
-       (vim.api.nvim_command ,(.. "au " events " " pattern " " ts)))))
+       (tset _G :_zest :autocmd ,id ,f)
+       (vim.api.nvim_command (.. "au " ,events " " ,pattern " " ,ts)))))
 
 ;(fn M.keymap-leader [])
+
+; v-lua
+
+(fn M.v-lua [f]
+  `(let [n# (. _G._zest.v :__count)
+         id# (.. "_" n#)]
+     (tset _G._zest.v :__count (+ n# 1))
+     (tset _G._zest.v id# ,f)
+     (.. "v:lua._zest.v." id#)))
+
+;(fn M.v-lua [...]
+;  (let [o [...]
+;        b []
+;        a []]
+;    (var f false)
+;    (each [_ v (ipairs o)]
+;      (if (= (type v) :string)
+;        (if (not f)
+;          (table.insert b v)
+;          (table.insert a v))
+;        (set f v)))
+;    `(let [n# (. _G._zest.v :__count)
+;           id# (.. "_" n#)]
+;       (tset _G._zest.v :__count (+ n# 1))
+;       (tset _G._zest.v id# ,f)
+;       (.. (table.concat ,b) "v:lua._zest.v." id# "()" (table.concat ,a)))))
 
 ; packer
 
 (fn M.packer-use-wrapper [repo opts]
   (let [xt [repo]]
     (when opts
+      ; FIXME needs to be a deep copy
       (each [k v (pairs opts)]
         (tset xt k v)))
     `(use ,xt)))

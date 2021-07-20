@@ -56,7 +56,7 @@ do
 end
 ```
 
-- map expressions:
+- map lua expressions:
 ```clojure
 (each [_ k (ipairs [:h :j :k :l])]
   (def-keymap (.. "<c-" k ">") [n] (.. "<c-w>" k)))
@@ -96,15 +96,15 @@ do
   local function _0_()
     return print("hello from fennel!")
   end
-  _G["ZEST"]["keymap"]["__3C_c_2D_m_3E_"] = _0_
-  vim.api.nvim_set_keymap("n", "<c-m>", (":call v:lua.ZEST.keymap." .. "__3C_c_2D_m_3E_" .. "()<cr>"), {noremap = true})
+  _G["_zest"]["keymap"]["__3C_c_2D_m_3E_"] = _0_
+  vim.api.nvim_set_keymap("n", "<c-m>", (":call v:lua._zest.keymap." .. "__3C_c_2D_m_3E_" .. "()<cr>"), {noremap = true})
 end
 ```
 
 - define an expression as a function
 
 ```clojure
-(def-keymap-fn :e [nv :expr]
+(def-keymap-fn :k [nv :expr]
   (if (> vim.v.count 0) "k" "gk"))
 ```
 ```lua
@@ -116,9 +116,9 @@ do
       return "gk"
     end
   end
-  _G["ZEST"]["keymap"]["_k"] = _0_
-  vim.api.nvim_set_keymap("n", "k", ("v:lua.ZEST.keymap." .. "_k" .. "()"), {expr = true, noremap = true})
-  vim.api.nvim_set_keymap("v", "k", ("v:lua.ZEST.keymap." .. "_k" .. "()"), {expr = true, noremap = true})
+  _G["_zest"]["keymap"]["_k"] = _0_
+  vim.api.nvim_set_keymap("n", "k", ("v:lua._zest.keymap." .. "_k" .. "()"), {expr = true, noremap = true})
+  vim.api.nvim_set_keymap("v", "k", ("v:lua._zest.keymap." .. "_k" .. "()"), {expr = true, noremap = true})
 end
 ```
 
@@ -168,8 +168,8 @@ do
         return vim.cmd("normal! g'\"")
       end
     end
-    _G["ZEST"]["autocmd"]["_6_2E_7758292924808e_2B_141_5F__2A__5F_BufReadPost"] = _0_
-    vim.api.nvim_command("au BufReadPost * :call v:lua.ZEST.autocmd._6_2E_7758292924808e_2B_141_5F__2A__5F_BufReadPost()")
+    _G["_zest"]["autocmd"]["_au_0"] = _0_
+    vim.api.nvim_command(("au " .. "BufReadPost" .. " " .. "*" .. " " .. ":call v:lua._zest.autocmd._au_0()"))
   end
   vim.api.nvim_command("augroup END")
 end
@@ -188,107 +188,135 @@ do
 end
 ```
 
-<hr>
+## misc
 
-# soon to be deprecated:
+### v-lua
 
-### se-
-- viml-esque set option
+- store a function and return its `v:lua` that can be called from vimscript
 
 ```clojure
-(se- encoding "utf-8")
-(se- synmaxcol 256)
-(se- number)
-(se- nowrap)
+(fn my-cmd [f-args] (print f-args))
+(vim.cmd (.. ":com -nargs=* Mycmd :call " (v-lua my-cmd) "(<f-args>)"))
 ```
 ```lua
-vim.api.nvim_set_option("encoding", "utf-8")
-vim.api.nvim_buf_set_option(0, "synmaxcol", 256)
-vim.api.nvim_win_set_option(0, "number", true)
-vim.api.nvim_win_set_option(0, "wrap", false)
-```
-
-### li-
-- map keys literally
-```clojure
-(li- [nv] <ScrollWheelUp> <c-y>)
-```
-```lua
+local function my_cmd(f_args)
+  return print(f_args)
+end
+local _0_
 do
-  vim.api.nvim_set_keymap("n", "<ScrollWheelUp>", "<c-y>", {noremap = true}),
-  vim.api.nvim_set_keymap("v", "<ScrollWheelUp>", "<c-y>", {noremap = true})
+  local n_0_ = _G._zest.v.__count
+  local id_0_ = ("_" .. n_0_)
+  _G._zest.v["__count"] = (n_0_ + 1)
+  _G._zest.v[id_0_] = my_cmd
+  _0_ = ("v:lua._zest.v." .. id_0_)
 end
+vim.cmd((":com -nargs=* Mycmd :call " .. _0_ .. "(<f-args>)"))
 ```
 
-### ki-
-- map keys by reference
-```clojure
-(each [_ k (ipairs [:h :j :k :l])]
-  (ki- [n] (.. "<c-" k ">") (.. "<c-w>" k)))
-```
-```lua
-for _, k in ipairs({"h", "j", "k", "l"}) do
-  require("zest.bind")("n", ("<c-" .. k .. ">"), ("<c-w>" .. k), {noremap = true})
-end
-```
+## old macros
 
-- map keys to functions
-```clojure
-(ki- [nvo :expr] :k (fn [] (if (> vim.v.count 0) :k :gk)))
-```
-```lua
-local function _0_()
-  if (vim.v.count > 0) then
-    return "k"
-  else
-    return "gk"
+<details>
+  <summary><b>soon to be deprecated!</b></summary>
+
+  ### se-
+  - viml-esque set option
+
+  ```clojure
+  (se- encoding "utf-8")
+  (se- synmaxcol 256)
+  (se- number)
+  (se- nowrap)
+  ```
+  ```lua
+  vim.api.nvim_set_option("encoding", "utf-8")
+  vim.api.nvim_buf_set_option(0, "synmaxcol", 256)
+  vim.api.nvim_win_set_option(0, "number", true)
+  vim.api.nvim_win_set_option(0, "wrap", false)
+  ```
+
+  ### li-
+  - map keys literally
+  ```clojure
+  (li- [nv] <ScrollWheelUp> <c-y>)
+  ```
+  ```lua
+  do
+    vim.api.nvim_set_keymap("n", "<ScrollWheelUp>", "<c-y>", {noremap = true}),
+    vim.api.nvim_set_keymap("v", "<ScrollWheelUp>", "<c-y>", {noremap = true})
   end
-end
-require("zest.bind")("nvo", "k", _0_, {expr = true, noremap = true})
-```
+  ```
 
-### g-
-- set global variable
-```clojure
-(g- gruvbox_contrast_dark :soft)
-```
-```lua
-vim.g["gruvbox_contrast_dark"] = "soft"
-```
+  ### ki-
+  - map keys by reference
+  ```clojure
+  (each [_ k (ipairs [:h :j :k :l])]
+    (ki- [n] (.. "<c-" k ">") (.. "<c-w>" k)))
+  ```
+  ```lua
+  for _, k in ipairs({"h", "j", "k", "l"}) do
+    require("zest.bind")("n", ("<c-" .. k .. ">"), ("<c-w>" .. k), {noremap = true})
+  end
+  ```
 
-### utils
-- *exec-* execute an ex command
-- *norm-* execute normal mode commands
-- *eval-* evaluate a vimscript expression
-- *viml-* evaluate a block of vimscript
+  - map keys to functions
+  ```clojure
+  (ki- [nvo :expr] :k (fn [] (if (> vim.v.count 0) :k :gk)))
+  ```
+  ```lua
+  local function _0_()
+    if (vim.v.count > 0) then
+      return "k"
+    else
+      return "gk"
+    end
+  end
+  require("zest.bind")("nvo", "k", _0_, {expr = true, noremap = true})
+  ```
 
-```clojure
-(ki- [x] :* (fn []
-  (norm- "gvy")
-  (exec- (.. "/" (eval- "@\"")))
-  (norm- "N")))
-```
-```lua
-local function _0_()
-  vim.api.nvim_command("norm! gvy")
-  vim.api.nvim_command(("/" .. vim.api.nvim_eval("@\"")))
-  return vim.api.nvim_command("norm! N")
-end
-require("zest.bind")("x", "*", _0_, {noremap = true})
-```
+  ### g-
+  - set global variable
+  ```clojure
+  (g- gruvbox_contrast_dark :soft)
+  ```
+  ```lua
+  vim.g["gruvbox_contrast_dark"] = "soft"
+  ```
 
-### misc
-- *colo-* set current colorscheme
-```clojure
-(colo- :limestone)
-```
-```lua
-vim.api.nvim_exec("colo limestone", true)
-```
-- *lead-* mapleader
-```clojure
-(lead- " ")
-```
-```lua
-vim.g["mapleader"] = " "
-```
+  ### utils
+  - *exec-* execute an ex command
+  - *norm-* execute normal mode commands
+  - *eval-* evaluate a vimscript expression
+  - *viml-* evaluate a block of vimscript
+
+  ```clojure
+  (ki- [x] :* (fn []
+    (norm- "gvy")
+    (exec- (.. "/" (eval- "@\"")))
+    (norm- "N")))
+  ```
+  ```lua
+  local function _0_()
+    vim.api.nvim_command("norm! gvy")
+    vim.api.nvim_command(("/" .. vim.api.nvim_eval("@\"")))
+    return vim.api.nvim_command("norm! N")
+  end
+  require("zest.bind")("x", "*", _0_, {noremap = true})
+  ```
+
+  ### misc
+  - *colo-* set current colorscheme
+  ```clojure
+  (colo- :limestone)
+  ```
+  ```lua
+  vim.api.nvim_exec("colo limestone", true)
+  ```
+  - *lead-* mapleader
+  ```clojure
+  (lead- " ")
+  ```
+  ```lua
+  vim.g["mapleader"] = " "
+  ```
+
+</details>
