@@ -27,10 +27,53 @@ The plugin can be installed on its own or together with [aniseed](https://github
 
 For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl).
 
-## macros
+# macros
 In each example, the top block contains the fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
 
 <b>NOTE</b> macros below are currently available under `zest.new-macros`
+
+### v-lua
+
+- store a function and return its `v:lua`
+
+```clojure
+(local v (v-lua my-fn))
+```
+```lua
+local v
+do
+  local n_0_ = _G._zest.v.__count
+  local id_0_ = ("_" .. n_0_)
+  _G._zest.v["__count"] = (n_0_ + 1)
+  _G._zest.v[id_0_] = my_fn
+  v = ("v:lua._zest.v." .. id_0_)
+end
+```
+
+### v-lua-format
+
+- a `string.format` wrapper for `v-lua`
+
+```clojure
+(vim.api.nvim_command
+  (v-lua-format
+    ":com -nargs=* Mycmd :call %s(<f-args>)"
+    (fn [f-args]
+      (print f-args))))
+```
+```lua
+local function _0_(...)
+  local n_0_ = _G._zest.v.__count
+  local id_0_ = ("_" .. n_0_)
+  _G._zest.v["__count"] = (n_0_ + 1)
+  local function _1_(f_args)
+    return print(f_args)
+  end
+  _G._zest.v[id_0_] = _1_
+  return ("v:lua._zest.v." .. id_0_)
+end
+vim.api.nvim_command(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
+```
 
 ## options
 
@@ -186,31 +229,6 @@ do
   vim.api.nvim_command(("augroup " .. "my-dirty-augroup"))
   vim.api.nvim_command("augroup END")
 end
-```
-
-## misc
-
-### v-lua
-
-- store a function and return its `v:lua` that can be called from vimscript
-
-```clojure
-(fn my-cmd [f-args] (print f-args))
-(vim.cmd (.. ":com -nargs=* Mycmd :call " (v-lua my-cmd) "(<f-args>)"))
-```
-```lua
-local function my_cmd(f_args)
-  return print(f_args)
-end
-local _0_
-do
-  local n_0_ = _G._zest.v.__count
-  local id_0_ = ("_" .. n_0_)
-  _G._zest.v["__count"] = (n_0_ + 1)
-  _G._zest.v[id_0_] = my_cmd
-  _0_ = ("v:lua._zest.v." .. id_0_)
-end
-vim.cmd((":com -nargs=* Mycmd :call " .. _0_ .. "(<f-args>)"))
 ```
 
 ## old macros

@@ -146,6 +146,7 @@
 
 ; v-lua
 
+; TODO!! i need to switch everything to this
 (fn M.v-lua [f]
   `(let [n# (. _G._zest.v :__count)
          id# (.. "_" n#)]
@@ -153,22 +154,8 @@
      (tset _G._zest.v id# ,f)
      (.. "v:lua._zest.v." id#)))
 
-;(fn M.v-lua [...]
-;  (let [o [...]
-;        b []
-;        a []]
-;    (var f false)
-;    (each [_ v (ipairs o)]
-;      (if (= (type v) :string)
-;        (if (not f)
-;          (table.insert b v)
-;          (table.insert a v))
-;        (set f v)))
-;    `(let [n# (. _G._zest.v :__count)
-;           id# (.. "_" n#)]
-;       (tset _G._zest.v :__count (+ n# 1))
-;       (tset _G._zest.v id# ,f)
-;       (.. (table.concat ,b) "v:lua._zest.v." id# "()" (table.concat ,a)))))
+(fn M.v-lua-format [s f]
+  `(string.format ,s ,(M.v-lua f)))
 
 ; packer
 
