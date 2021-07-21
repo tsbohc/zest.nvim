@@ -10,17 +10,24 @@ An opinionated macro library that aims to streamline the process of configuring 
 
 The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
 
-<b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me at @tsbohc on the aniseed discord.
+### features
+
+- Virtually no startup penalty: <0.1ms
+- Everything is done at compile time using macros
+- Automatically recompiles `fnl/` to `lua/`
+- Fennel compiler is lazy-loaded on `BufWritePost`
+
+<b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me in an issue or at @tsbohc on the [conjure discord](conjure.fun/discord).
 
 ## usage
 
-- install with your favourite package manager
+- Install with your favourite package manager
 ```clojure
 (use :tsbohc/zest.nvim)
 (let [z (require :zest)] (z.setup))
 ```
 
-- import macros, renaming them as you wish
+- Import macros, renaming them as you wish
 ```clojure
 (import-macros {:zest-macro my-alias} :zest.macros)
 ```
@@ -29,8 +36,6 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 
 # macros
 In each example, the top block contains the fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
-
-<b>NOTE</b> macros below are currently available under `zest.new-macros`
 
 ### v-lua
 
@@ -168,7 +173,7 @@ end
 ## autocommands
 
 ### def-augroup
-- define an augroup with `autocmd!`
+- define an augroup with `autocmd!` included
 
 ```clojure
 (def-augroup :my-augroup)
