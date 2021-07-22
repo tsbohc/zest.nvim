@@ -39,7 +39,9 @@
     (set fennel.path (.. (get-rtp) ";" fennel.path))
     (set state.fennel fennel)
     (vim.api.nvim_command ":redraw")
-    (print "<zest> initialise compiler")
+    (vim.api.nvim_echo [[" zest " "Search"] [" " "None"]
+                        ["initialise compiler" "None"]]
+                       false {})
     state.fennel))
 
 (local M {})
@@ -54,7 +56,11 @@
           target (string.gsub (string.gsub source ".fnl$" ".lua") fnl-path lua-path) ]
       (when _G._zest.config.verbose-compiler
         (vim.api.nvim_command ":redraw")
-        (print (.. "<zest> " (vim.fn.expand "%:t") " => " (target:gsub (os.getenv "HOME") "~"))))
+        (vim.api.nvim_echo [[" zest " "Search"] [" " "None"]
+                            [(vim.fn.expand "%:t") "None"]
+                            [" => " "Comment"]
+                            [(target:gsub vim.env.HOME "~") "None"]]
+                           false {}))
       (match [fnl-path lua-path]
         [x y]
         (do

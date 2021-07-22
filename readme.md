@@ -31,7 +31,7 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 
 - Import macros, renaming them as you wish
 ```clojure
-(import-macros {:zest-macro my-alias} :zest.macros)
+(import-macros {:opt-prepend opt^} :zest.macros)
 ```
 
 ### setup
@@ -49,9 +49,11 @@ By default, zest will mirror the `stdpath/fnl` directory tree (or one that is sy
 # macros
 In each example, the top block contains the fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
 
+Macro names are intentionally quite verbose, remember that you can alias them to something much shorter.
+
 ### v-lua
 
-- store a function and return its `v:lua`, excluding the parentheses
+- Store a function and return its `v:lua`, excluding the parentheses
 
 ```clojure
 (local v (v-lua my-fn))
@@ -68,7 +70,7 @@ end
 
 ### v-lua-format
 
-- a `string.format` wrapper for `v-lua`
+- A `string.format` wrapper for `v-lua`
 
 ```clojure
 (vim.api.nvim_command
@@ -92,38 +94,59 @@ vim.api.nvim_command(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _1_
 
 ## options
 
-### set-option
-- todo
+- A complete `vim.opt` wrapper
 
-### get-option
-- todo
+```clojure
+(opt-local-append completeopt ["menuone" "noselect"])
+```
+```lua
+(vim.opt_local.completeopt):append({"menuone", "noselect"})
+```
+
+<details>
+  <summary>Full list of <code>opt-</code> macros</summary>
+
+  <br>
+
+  ```
+  opt-set      opt-local-set      opt-global-set
+  opt-get      opt-local-get      opt-global-get
+  opt-append   opt-local-append   opt-global-append
+  opt-prepend  opt-local-prepend  opt-global-prepend
+  opt-remove   opt-local-remove   opt-global-remove
+  ```
+
+</details>
 
 ## keymaps
 
 ### def-keymap
-- to disable `noremap`, include `:remap` after the modes
 
-- map literals:
+- Map literals
+
 ```clojure
 (def-keymap :H [nv] "0")
+
 ```
 ```lua
 vim.api.nvim_set_keymap("n", "H", "0", {noremap = true})
 vim.api.nvim_set_keymap("v", "H", "0", {noremap = true})
 ```
 
-- map lua expressions:
+- Map lua expressions
+
 ```clojure
 (each [_ k (ipairs [:h :j :k :l])]
   (def-keymap (.. "<c-" k ">") [n] (.. "<c-w>" k)))
 ```
 ```lua
-for _, k in ipairs({"h", "j", "k", "l"}) do
-  vim.api.nvim_set_keymap("n", ("<c-" .. k .. ">"), ("<c-w>" .. k), {noremap = true})
-end
+  for _, k in ipairs({"h", "j", "k", "l"}) do
+    vim.api.nvim_set_keymap("n", ("<c-" .. k .. ">"), ("<c-w>" .. k), {noremap = true})
+  end
 ```
 
-- map pairs:
+- Map pairs
+
 ```clojure
 (def-keymap [n]
   {:<ScrollWheelUp>   "<c-y>"
@@ -134,8 +157,11 @@ vim.api.nvim_set_keymap("n", "<ScrollWheelUp>", "<c-y>", {noremap = true})
 vim.api.nvim_set_keymap("n", "<ScrollWheelDown>", "<c-e>", {noremap = true})
 ```
 
+To disable `noremap`, include `:remap` after the modes.
+
 ### def-keymap-fn
-- define a function and map it to a key
+
+- Define a function and map it to a key
 
 ```clojure
 (def-keymap-fn :<c-m> [n]
@@ -157,7 +183,7 @@ for m_0_ in string.gmatch("n", ".") do
 end
 ```
 
-- define an expression as a function
+- Define an expression as a function
 
 ```clojure
 (def-keymap-fn :k [nv :expr]
@@ -186,7 +212,8 @@ end
 ## autocommands
 
 ### def-augroup
-- define an augroup with `autocmd!` included
+
+- Define an augroup with `autocmd!` included
 
 ```clojure
 (def-augroup :my-augroup)
@@ -198,7 +225,8 @@ vim.api.nvim_command("augroup END")
 ```
 
 ### def-autocmd
-- define an autocommand
+
+- Define an autocommand
 
 ```clojure
 (def-autocmd "*" [VimResized] "wincmd =")
@@ -208,7 +236,8 @@ vim.api.nvim_command(("au " .. "VimResized" .. " " .. "*" .. " " .. "wincmd ="))
 ```
 
 ### def-autocmd-fn
-- define a function and bind it as an autocommand
+
+- Define a function and bind it as an autocommand
 
 ```clojure
 (def-augroup :restore-position
@@ -240,7 +269,8 @@ vim.api.nvim_command("augroup END")
 ```
 
 ### def-augroup-dirty
-- define an augroup without `autocmd!`
+
+- Define an augroup without `autocmd!`
 
 ```clojure
 (def-augroup-dirty :my-dirty-augroup)
@@ -252,5 +282,6 @@ vim.api.nvim_command("augroup END")
 
 # thanks
 
+- [Hauleth](https://old.reddit.com/user/Hauleth) for this [post](https://old.reddit.com/r/neovim/comments/n5dczu/when_vim_and_lisp_are_your_love/), it served as the main inspiration for zest on the early stages
 - [Olical](https://github.com/Olical) for sparking my interest in lisps with aniseed
 - [ElKowar](https://github.com/elkowar) for sharing his thoughts and his discord status

@@ -102,36 +102,13 @@
            ts# (string.format ":call %s()" v#)]
        (vim.api.nvim_command (.. ,(.. "au " events " " ) ,pattern " " ts#)))))
 
-; setoption
+; setoption bakery
 
-; TODO change to set-g and set-l? what about get-? is it local/global too?
-
-(fn M.get-option [key]
-  ; FIXME doesn't seem to be an issue anymore, just returns false. good shit
-  (let [key (tostring key)]
-    `(let [(ok?# val#) (pcall (fn [] (: (. vim.opt ,key) :get)))]
-       (if ok?# val# nil))))
-
-(fn M.set-option [key val]
-  (let [key (tostring key)
-        val (if (= nil val) true val)
-        (key act) (if (key:find ":")
-                    (key:match "(%w+):(%w+)")
-                    (values key nil))
-        opt `(. vim.opt ,key)]
-    (match act
-      nil      `(tset vim.opt ,key ,val)
-      "toggle" `(tset vim.opt ,key (not (opt-get ,key)))
-      _        `(: ,opt ,act ,val))))
-
-
-; vim.opt factory :o
-
-;M.opt-set      M.opt-local-set      M.opt-global-set
-;M.opt-get      M.opt-local-get      M.opt-global-get
-;M.opt-append   M.opt-local-append   M.opt-global-append
-;M.opt-prepend  M.opt-local-prepend  M.opt-global-prepend
-;M.opt-remove   M.opt-local-remove   M.opt-global-remove
+;opt-set      opt-local-set      opt-global-set
+;opt-get      opt-local-get      opt-global-get
+;opt-append   opt-local-append   opt-global-append
+;opt-prepend  opt-local-prepend  opt-global-prepend
+;opt-remove   opt-local-remove   opt-global-remove
 
 (fn _opt-set [scope key val]
   (let [key (tostring key)
@@ -153,7 +130,6 @@
     (tset M (.. "opt" (scope:gsub "_" "-") "-" act)
           (fn [key val]
             (_opt-act scope key val act)))))
-
 
 ;(fn M.def-leader [])
 

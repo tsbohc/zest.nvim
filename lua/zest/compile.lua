@@ -54,7 +54,7 @@ local function load_fennel()
   fennel.path = (get_rtp() .. ";" .. fennel.path)
   state.fennel = fennel
   vim.api.nvim_command(":redraw")
-  print("<zest> initialise compiler")
+  vim.api.nvim_echo({{" zest ", "Search"}, {" ", "None"}, {"initialise compiler", "None"}}, false, {})
   return state.fennel
 end
 local M = {}
@@ -67,7 +67,7 @@ M.compile = function()
     local target = string.gsub(string.gsub(source, ".fnl$", ".lua"), fnl_path, lua_path)
     if _G._zest.config["verbose-compiler"] then
       vim.api.nvim_command(":redraw")
-      print(("<zest> " .. vim.fn.expand("%:t") .. " => " .. target:gsub(os.getenv("HOME"), "~")))
+      vim.api.nvim_echo({{" zest ", "Search"}, {" ", "None"}, {vim.fn.expand("%:t"), "None"}, {" => ", "Comment"}, {target:gsub(vim.env.HOME, "~"), "None"}}, false, {})
     end
     local _1_ = {fnl_path, lua_path}
     if ((type(_1_) == "table") and (nil ~= (_1_)[1]) and (nil ~= (_1_)[2])) then
