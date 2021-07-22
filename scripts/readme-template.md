@@ -58,16 +58,10 @@ The examples are refreshed with every change to zest and are always up to date.
 - Store a function and return its `v:lua`, excluding the parentheses
 
 ```clojure
-(local v (v-lua my-fn))
+{{fnl:v-lua1}}
 ```
 ```lua
-local v
-do
-  local ZEST_ID_0_ = ("_" .. _G._zest.v["#"])
-  _G._zest["v"][ZEST_ID_0_] = __fnl_global__my_2dfn
-  _G._zest["v"]["#"] = (_G._zest.v["#"] + 1)
-  v = ("v:lua._zest.v." .. ZEST_ID_0_)
-end
+{{lua:v-lua1}}
 ```
 
 ### v-lua-format
@@ -75,23 +69,10 @@ end
 - A `string.format` wrapper for `v-lua`
 
 ```clojure
-(vim.api.nvim_command
-  (v-lua-format
-    ":com -nargs=* Mycmd :call %s(<f-args>)"
-    (fn [...]
-      (print ...))))
+{{fnl:v-lua-format1}}
 ```
 ```lua
-local function _0_(...)
-  local ZEST_ID_0_ = ("_" .. _G._zest.v["#"])
-  local function _1_(...)
-    return print(...)
-  end
-  _G._zest["v"][ZEST_ID_0_] = _1_
-  _G._zest["v"]["#"] = (_G._zest.v["#"] + 1)
-  return ("v:lua._zest.v." .. ZEST_ID_0_)
-end
-vim.api.nvim_command(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
+{{lua:v-lua-format1}}
 ```
 
 ## options
@@ -99,10 +80,10 @@ vim.api.nvim_command(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_
 - A complete `vim.opt` wrapper
 
 ```clojure
-(opt-local-append completeopt ["menuone" "noselect"])
+{{fnl:opt}}
 ```
 ```lua
-do end (vim.opt_local.completeopt):append({"menuone", "noselect"})
+{{lua:opt}}
 ```
 
 <details>
@@ -127,25 +108,19 @@ do end (vim.opt_local.completeopt):append({"menuone", "noselect"})
 - Map literals
 
 ```clojure
-(def-keymap :H [nv] "0")
+{{fnl:def-keymap1}}
 ```
 ```lua
-do
-  vim.api.nvim_set_keymap("n", "H", "0", {noremap = true})
-  vim.api.nvim_set_keymap("v", "H", "0", {noremap = true})
-end
+{{lua:def-keymap1}}
 ```
 
 - Map lua expressions
 
 ```clojure
-(each [_ k (ipairs [:h :j :k :l])]
-  (def-keymap (.. "<c-" k ">") [n] (.. "<c-w>" k)))
+{{fnl:def-keymap2}}
 ```
 ```lua
-for _, k in ipairs({"h", "j", "k", "l"}) do
-  vim.api.nvim_set_keymap("n", ("<c-" .. k .. ">"), ("<c-w>" .. k), {noremap = true})
-end
+{{lua:def-keymap2}}
 ```
 
 - Map pairs
@@ -167,53 +142,19 @@ To disable `noremap`, include `:remap` after the modes.
 - Define a function and map it to a key
 
 ```clojure
-(def-keymap-fn :<c-m> [n]
-  (print "hello from fennel!"))
+{{fnl:def-keymap-fn1}}
 ```
 ```lua
-do
-  local ZEST_V_0_
-  do
-    local ZEST_ID_0_ = "_60_99_45_109_62_"
-    local function _0_()
-      return print("hello from fennel!")
-    end
-    _G._zest["keymap"][ZEST_ID_0_] = _0_
-    ZEST_V_0_ = ("v:lua._zest.keymap." .. ZEST_ID_0_)
-  end
-  local ZEST_RHS_0_ = string.format(":call %s()<cr>", ZEST_V_0_)
-  for ZEST_M_0_ in string.gmatch("n", ".") do
-    vim.api.nvim_set_keymap(ZEST_M_0_, "<c-m>", ZEST_RHS_0_, {noremap = true})
-  end
-end
+{{lua:def-keymap-fn1}}
 ```
 
 - Define an expression as a function
 
 ```clojure
-(def-keymap-fn :k [nv :expr]
-  (if (> vim.v.count 0) "k" "gk"))
+{{fnl:def-keymap-fn2}}
 ```
 ```lua
-do
-  local ZEST_V_0_
-  do
-    local ZEST_ID_0_ = "_107_"
-    local function _0_()
-      if (vim.v.count > 0) then
-        return "k"
-      else
-        return "gk"
-      end
-    end
-    _G._zest["keymap"][ZEST_ID_0_] = _0_
-    ZEST_V_0_ = ("v:lua._zest.keymap." .. ZEST_ID_0_)
-  end
-  local ZEST_RHS_0_ = string.format("%s()", ZEST_V_0_)
-  for ZEST_M_0_ in string.gmatch("nv", ".") do
-    vim.api.nvim_set_keymap(ZEST_M_0_, "k", ZEST_RHS_0_, {expr = true, noremap = true})
-  end
-end
+{{lua:def-keymap-fn2}}
 ```
 
 ## autocommands
@@ -223,16 +164,10 @@ end
 - Define an augroup with `autocmd!` included
 
 ```clojure
-(def-augroup :my-augroup)
+{{fnl:def-augroup1}}
 ```
 ```lua
-do
-  vim.api.nvim_command(("augroup " .. "my-augroup"))
-  vim.api.nvim_command("autocmd!")
-  do
-  end
-  vim.api.nvim_command("augroup END")
-end
+{{lua:def-augroup1}}
 ```
 
 ### def-autocmd
@@ -240,10 +175,10 @@ end
 - Define an autocommand
 
 ```clojure
-(def-autocmd "*" [VimResized] "wincmd =")
+{{fnl:def-autocmd1}}
 ```
 ```lua
-vim.api.nvim_command(("au " .. "VimResized" .. " " .. "*" .. " " .. "wincmd ="))
+{{lua:def-autocmd1}}
 ```
 
 ### def-autocmd-fn
@@ -251,34 +186,10 @@ vim.api.nvim_command(("au " .. "VimResized" .. " " .. "*" .. " " .. "wincmd ="))
 - Define a function and bind it as an autocommand
 
 ```clojure
-(def-augroup :restore-position
-  (def-autocmd-fn "*" [BufReadPost]
-    (when (and (> (vim.fn.line "'\"") 1)
-               (<= (vim.fn.line "'\"") (vim.fn.line "$")))
-      (vim.cmd "normal! g'\""))))
+{{fnl:def-autocmd-fn1}}
 ```
 ```lua
-do
-  vim.api.nvim_command(("augroup " .. "restore-position"))
-  vim.api.nvim_command("autocmd!")
-  do
-    local ZEST_V_0_
-    do
-      local ZEST_ID_0_ = ("_" .. _G._zest.autocmd["#"])
-      local function _0_()
-        if ((vim.fn.line("'\"") > 1) and (vim.fn.line("'\"") <= vim.fn.line("$"))) then
-          return vim.cmd("normal! g'\"")
-        end
-      end
-      _G._zest["autocmd"][ZEST_ID_0_] = _0_
-      _G._zest["autocmd"]["#"] = (_G._zest.autocmd["#"] + 1)
-      ZEST_V_0_ = ("v:lua._zest.autocmd." .. ZEST_ID_0_)
-    end
-    local ZEST_RHS_0_ = string.format(":call %s()", ZEST_V_0_)
-    vim.api.nvim_command(("au BufReadPost " .. "*" .. " " .. ZEST_RHS_0_))
-  end
-  vim.api.nvim_command("augroup END")
-end
+{{lua:def-autocmd-fn1}}
 ```
 
 ### def-augroup-dirty
@@ -286,15 +197,10 @@ end
 - Define an augroup without `autocmd!`
 
 ```clojure
-(def-augroup-dirty :my-dirty-augroup)
+{{fnl:def-augroup-dirty1}}
 ```
 ```lua
-do
-  vim.api.nvim_command(("augroup " .. "my-dirty-augroup"))
-  do
-  end
-  vim.api.nvim_command("augroup END")
-end
+{{lua:def-augroup-dirty1}}
 ```
 
 # thanks
