@@ -51,9 +51,10 @@ local function get_rtp()
 end
 local function load_fennel()
   local fennel = require("zest.fennel")
-  print("<zest> initialise compiler")
   fennel.path = (get_rtp() .. ";" .. fennel.path)
   state.fennel = fennel
+  vim.api.nvim_command(":redraw")
+  print("<zest> initialise compiler")
   return state.fennel
 end
 local M = {}
@@ -61,11 +62,26 @@ M.compile = function()
   local source = vim.fn.expand("%:p")
   if not source:find("macros.fnl$") then
     local fennel = (state.fennel or load_fennel())
-    local fnl_path = vim.fn.resolve((vim.fn.stdpath("config") .. "/fnl"))
-    local lua_path = vim.fn.resolve((vim.fn.stdpath("config") .. "/lua"))
+    local fnl_path = vim.fn.resolve(_G._zest.config.source)
+    local lua_path = vim.fn.resolve(_G._zest.config.target)
     local target = string.gsub(string.gsub(source, ".fnl$", ".lua"), fnl_path, lua_path)
-    vim.fn.mkdir(fs.dirname(target), "p")
-    return fs.write(target, fennel.compileString(fs.read(source)))
+    if _G._zest.config["verbose-compiler"] then
+      vim.api.nvim_command(":redraw")
+      print(("<zest> " .. vim.fn.expand("%:t") .. " => " .. target:gsub(os.getenv("HOME"), "~")))
+    end
+    local _1_ = {fnl_path, lua_path}
+    if ((type(_1_) == "table") and (nil ~= (_1_)[1]) and (nil ~= (_1_)[2])) then
+      local x = (_1_)[1]
+      local y = (_1_)[2]
+      vim.fn.mkdir(fs.dirname(target), "p")
+      return fs.write(target, fennel.compileString(fs.read(source)))
+    elseif ((type(_1_) == "table") and ((_1_)[1] == nil) and (nil ~= (_1_)[2])) then
+      local x = (_1_)[2]
+      return print("<zest> invalid source path!")
+    elseif ((type(_1_) == "table") and (nil ~= (_1_)[1]) and ((_1_)[2] == nil)) then
+      local x = (_1_)[1]
+      return print("<zest> invalid target path!")
+    end
   end
 end
 local function _0_(_, ...)

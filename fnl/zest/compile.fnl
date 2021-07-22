@@ -36,9 +36,10 @@
 (fn load-fennel []
   "initialise zest compiler"
   (let [fennel (require :zest.fennel)]
-    (print "<zest> initialise compiler")
     (set fennel.path (.. (get-rtp) ";" fennel.path))
     (set state.fennel fennel)
+    (vim.api.nvim_command ":redraw")
+    (print "<zest> initialise compiler")
     state.fennel))
 
 (local M {})
@@ -48,11 +49,21 @@
   (local source (vim.fn.expand "%:p"))
   (when (not (source:find "macros.fnl$"))
     (let [fennel (or state.fennel (load-fennel))
-          fnl-path (vim.fn.resolve (.. (vim.fn.stdpath :config) "/fnl"))
-          lua-path (vim.fn.resolve (.. (vim.fn.stdpath :config) "/lua"))
+          fnl-path (vim.fn.resolve _G._zest.config.source)
+          lua-path (vim.fn.resolve _G._zest.config.target)
           target (string.gsub (string.gsub source ".fnl$" ".lua") fnl-path lua-path) ]
-      (vim.fn.mkdir (fs.dirname target) :p)
-      (fs.write target (fennel.compileString (fs.read source))))))
+      (when _G._zest.config.verbose-compiler
+        (vim.api.nvim_command ":redraw")
+        (print (.. "<zest> " (vim.fn.expand "%:t") " => " (target:gsub (os.getenv "HOME") "~"))))
+      (match [fnl-path lua-path]
+        [x y]
+        (do
+          (vim.fn.mkdir (fs.dirname target) :p)
+          (fs.write target (fennel.compileString (fs.read source))))
+        [nil x]
+        (print "<zest> invalid source path!")
+        [x nil]
+        (print "<zest> invalid target path!")))))
 
 (setmetatable M {:__call (fn [_ ...] (M.compile ...))})
 

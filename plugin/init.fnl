@@ -1,11 +1,12 @@
 ; return if aniseed is detected
-(when (. vim.g :aniseed#env)
+(when (or (. vim.g :aniseed#env)
+          _G._zest.config.disable-compiler)
   (lua "return"))
 
 ; autocmds
 
 (local cmd vim.api.nvim_command)
-(local au-selector (vim.fn.resolve (.. (vim.fn.stdpath :config) "/fnl/*.fnl")))
+(local au-selector (.. _G._zest.config.source "/*.fnl"))
 
 (cmd "augroup neozestcompile")
 (cmd "autocmd!")
