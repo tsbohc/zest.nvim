@@ -66,23 +66,6 @@ do
 end
 ```
 
-- this is useful if zest doesn't support your particular use case, or for scripting
-
-```clojure
-(set-option foldtext (.. (v-lua my-fold-fn) "()"))
-```
-
-```lua
-local _0_
-do
-  local id_0_ = ("_" .. _G._zest.v["#"])
-  _G._zest["v"][id_0_] = my_fold_fn
-  _G._zest["v"]["#"] = (_G._zest.v["#"] + 1)
-  _0_ = ("v:lua._zest.v." .. id_0_)
-end
-vim.opt["foldtext"] = (_0_ .. "()")
-```
-
 ### v-lua-format
 
 - a `string.format` wrapper for `v-lua`
