@@ -102,6 +102,22 @@
            ZEST_RHS# (string.format ":call %s()" ZEST_V#)]
        (vim.api.nvim_command (.. ,(.. "au " events " " ) ,pattern " " ZEST_RHS#)))))
 
+; textobject
+
+; TODO prep RHS like this wherever else i can
+(fn M.def-textobject [fs ts]
+  `(let [ZEST_RHS# (.. ":<c-u>norm! " ,ts "<cr>")]
+     (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
+     (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true})))
+
+(fn M.def-textobject-fn [fs ...]
+  (let [v (_v-lua `(fn [] ,...) :textobject fs)]
+    `(let [ZEST_V# ,v
+           ZEST_RHS# (string.format ":<c-u>call %s()<cr>" ZEST_V#)]
+       (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
+       (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true}))))
+
+
 ; setoption bakery
 
 ;opt-set      opt-local-set      opt-global-set

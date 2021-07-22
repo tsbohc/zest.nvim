@@ -297,6 +297,48 @@ do
 end
 ```
 
+## textobjects
+
+### def-textobject
+
+- Define a custom text object as a normal mode string
+
+```clojure
+(def-textobject :il "g_v^")
+```
+```lua
+do
+  local ZEST_RHS_0_ = (":<c-u>norm! " .. "g_v^" .. "<cr>")
+  vim.api.nvim_set_keymap("x", "il", ZEST_RHS_0_, {noremap = true, silent = true})
+  vim.api.nvim_set_keymap("o", "il", ZEST_RHS_0_, {noremap = true, silent = true})
+end
+```
+
+### def-textobject-fn
+
+- Define a custom text object as a function
+
+```clojure
+(def-textobject-fn :al
+  (vim.cmd "norm! $v0"))
+```
+```lua
+do
+  local ZEST_V_0_
+  do
+    local ZEST_ID_0_ = "_97_108_"
+    local function _0_()
+      return vim.cmd("norm! $v0")
+    end
+    _G._zest["textobject"][ZEST_ID_0_] = _0_
+    ZEST_V_0_ = ("v:lua._zest.textobject." .. ZEST_ID_0_)
+  end
+  local ZEST_RHS_0_ = string.format(":<c-u>call %s()<cr>", ZEST_V_0_)
+  vim.api.nvim_set_keymap("x", "al", ZEST_RHS_0_, {noremap = true, silent = true})
+  vim.api.nvim_set_keymap("o", "al", ZEST_RHS_0_, {noremap = true, silent = true})
+end
+```
+
 ## zest doesn't have x
 
 ### user commands

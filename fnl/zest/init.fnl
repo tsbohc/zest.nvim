@@ -33,10 +33,9 @@
 (fn M.setup [xt]
   ;(print (.. "config:\n" (vim.inspect config)))
   (set _G._zest
-       {:keymap {:# 1} ; depr
-        :statusline {:# 1}
+       {:keymap {}
         :autocmd {:# 1}
-        :keymap (new-xt :keymap)
+        :textobject {}
         :v {:# 1}
         :config (config xt)}))
 

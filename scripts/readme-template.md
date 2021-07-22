@@ -203,6 +203,30 @@ To disable `noremap`, include `:remap` after the modes.
 {{lua:def-augroup-dirty1}}
 ```
 
+## textobjects
+
+### def-textobject
+
+- Define a custom text object as a normal mode string
+
+```clojure
+{{fnl:def-textobject1}}
+```
+```lua
+{{lua:def-textobject1}}
+```
+
+### def-textobject-fn
+
+- Define a custom text object as a function
+
+```clojure
+{{fnl:def-textobject-fn1}}
+```
+```lua
+{{lua:def-textobject-fn1}}
+```
+
 ## zest doesn't have x
 
 ### user commands
