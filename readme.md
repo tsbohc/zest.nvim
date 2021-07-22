@@ -76,7 +76,7 @@ end
 local _0_
 do
   local id_0_ = ("_" .. _G._zest.v["#"])
-  _G._zest["v"][id_0_] = __fnl_global__my_2dfold_2dfn
+  _G._zest["v"][id_0_] = my_fold_fn
   _G._zest["v"]["#"] = (_G._zest.v["#"] + 1)
   _0_ = ("v:lua._zest.v." .. id_0_)
 end
