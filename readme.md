@@ -80,8 +80,8 @@ end
 ```lua
 local function _1_(...)
   local id_0_ = ("_" .. _G._zest.v["#"])
-  local function _2_(f_args)
-    return print(f_args)
+  local function _2_(...)
+    return print(...)
   end
   _G._zest["v"][id_0_] = _2_
   _G._zest["v"]["#"] = (_G._zest.v["#"] + 1)
