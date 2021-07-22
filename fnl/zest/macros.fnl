@@ -68,8 +68,8 @@
 (fn M.def-keymap-fn [fs args ...]
   (let [(modes opts) (_keymap-options args)
         v (_v-lua `(fn [] ,...) :keymap fs)]
-    `(let [ZEST_V# ,v
-           ZEST_RHS# (string.format ,(if opts.expr "%s()" ":call %s()<cr>") ZEST_V#)]
+    `(let [ZEST_V_LUA# ,v
+           ZEST_RHS# (string.format ,(if opts.expr "%s()" ":call %s()<cr>") ZEST_V_LUA#)]
        (each [ZEST_M# (string.gmatch ,modes ".")]
          (vim.api.nvim_set_keymap ZEST_M# ,fs ZEST_RHS# ,opts)))))
 
@@ -98,8 +98,8 @@
 (fn M.def-autocmd-fn [pattern events ...]
   (let [events (table.concat (xs-str events) ",")
         v (_v-lua `(fn [] ,...) :autocmd)]
-    `(let [ZEST_V# ,v
-           ZEST_RHS# (string.format ":call %s()" ZEST_V#)]
+    `(let [ZEST_V_LUA# ,v
+           ZEST_RHS# (string.format ":call %s()" ZEST_V_LUA#)]
        (vim.api.nvim_command (.. ,(.. "au " events " " ) ,pattern " " ZEST_RHS#)))))
 
 ; textobject
@@ -112,8 +112,8 @@
 
 (fn M.def-textobject-fn [fs ...]
   (let [v (_v-lua `(fn [] ,...) :textobject fs)]
-    `(let [ZEST_V# ,v
-           ZEST_RHS# (string.format ":<c-u>call %s()<cr>" ZEST_V#)]
+    `(let [ZEST_V_LUA# ,v
+           ZEST_RHS# (string.format ":<c-u>call %s()<cr>" ZEST_V_LUA#)]
        (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
        (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true}))))
 
