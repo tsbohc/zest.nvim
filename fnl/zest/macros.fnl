@@ -124,6 +124,37 @@
       "toggle" `(tset vim.opt ,key (not (opt-get ,key)))
       _        `(: ,opt ,act ,val))))
 
+
+; vim.opt factory :o
+
+;M.opt-set      M.opt-local-set      M.opt-global-set
+;M.opt-get      M.opt-local-get      M.opt-global-get
+;M.opt-append   M.opt-local-append   M.opt-global-append
+;M.opt-prepend  M.opt-local-prepend  M.opt-global-prepend
+;M.opt-remove   M.opt-local-remove   M.opt-global-remove
+
+(fn _opt-set [scope key val]
+  (let [key (tostring key)
+        val (if (= nil val) true val)]
+    `(tset (. vim ,(.. :opt scope)) ,key ,val)))
+
+(fn _opt-act [scope key val act]
+  (let [key (tostring key)
+        opt `(. vim ,(.. :opt scope) ,key)]
+    `(: ,opt ,act ,val)))
+
+(each [_ scope (ipairs ["" "_local" "_global"])]
+  (tset M (.. "opt" (scope:gsub "_" "-") "-set")
+        (fn [key val]
+          (_opt-set scope key val))))
+
+(each [_ scope (ipairs ["" "_local" "_global"])]
+  (each [_ act (ipairs [:get :append :prepend :remove])]
+    (tset M (.. "opt" (scope:gsub "_" "-") "-" act)
+          (fn [key val]
+            (_opt-act scope key val act)))))
+
+
 ;(fn M.def-leader [])
 
 ; packer

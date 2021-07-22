@@ -252,5 +252,5 @@ vim.api.nvim_command("augroup END")
 
 # thanks
 
-- [Olical](https://github.com/Olical) for sparking my interest in lisps
+- [Olical](https://github.com/Olical) for sparking my interest in lisps with aniseed
 - [ElKowar](https://github.com/elkowar) for sharing his thoughts and his discord status
