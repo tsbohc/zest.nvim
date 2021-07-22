@@ -203,8 +203,30 @@ To disable `noremap`, include `:remap` after the modes.
 {{lua:def-augroup-dirty1}}
 ```
 
+## zest doesn't have x
+
+### user commands
+
+At the moment, there isn't a more concise way to define user commands than straight strings. I don't see much benefit in defining individual arguments with s-expressions: it's far too verbose.
+
+For now, I would suggest doing something like this:
+
+```clojure
+(fn def-command-fn [s f]
+  (vim.api.nvim_command
+    (v-lua-format
+      (.. ":command " s) f)))
+
+(fn Mycmd [...]
+  (print ...))
+
+(def-cmd-fn
+  "-nargs=* Mycmd :call %s(<f-args>)"
+  Mycmd)
+```
+
 # thanks
 
-- [Hauleth](https://old.reddit.com/user/Hauleth) for this [post](https://old.reddit.com/r/neovim/comments/n5dczu/when_vim_and_lisp_are_your_love/), it served as the main inspiration for zest on the early stages
-- [Olical](https://github.com/Olical) for sparking my interest in lisps with aniseed
+- [Hauleth](https://old.reddit.com/user/Hauleth) for this [post](https://old.reddit.com/r/neovim/comments/n5dczu/when_vim_and_lisp_are_your_love/), which sparked my interest in fennel
+- [Olical](https://github.com/Olical) for aniseed and being awesome
 - [ElKowar](https://github.com/elkowar) for sharing his thoughts and his discord status
