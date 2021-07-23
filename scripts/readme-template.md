@@ -53,26 +53,26 @@ Macro names are intentionally quite verbose, remember that you can alias them to
 
 The examples are refreshed with every change to zest and are always up to date.
 
-### v-lua
+### vlua
 
 - Store a function and return its `v:lua`, excluding the parentheses
 
 ```clojure
-{{fnl:v-lua1}}
+{{fnl:vlua1}}
 ```
 ```lua
-{{lua:v-lua1}}
+{{lua:vlua1}}
 ```
 
-### v-lua-format
+### vlua-format
 
-- A `string.format` wrapper for `v-lua`
+- A `string.format` wrapper for `vlua`
 
 ```clojure
-{{fnl:v-lua-format1}}
+{{fnl:vluaformat1}}
 ```
 ```lua
-{{lua:v-lua-format1}}
+{{lua:vluaformat1}}
 ```
 
 ## options
@@ -235,14 +235,14 @@ At compile time, there is no good way of knowing if a variable contains a functi
 
 This is the reason for the having both `def-keymap` and `def-keymap-fn`, for example.
 
-That said, `def-keymap` and others can accept functions if they have been wrapped in `v-lua`:
+That said, `def-keymap` and others can accept functions if they have been wrapped in `vlua`:
 
 ```clojure
 (fn my-fn []
   (print "dinosaurs"))
 
 (def-keymap :<c-m> [n]
-  (v-lua-format
+  (vlua-format
     ":call %s()<cr>"
     my-fn))
 ```
@@ -256,7 +256,7 @@ For now, I would suggest doing something like this:
 ```clojure
 (fn def-command-fn [s f]
   (vim.api.nvim_command
-    (v-lua-format
+    (vlua-format
       (.. ":command " s) f)))
 
 (fn Mycmd [...]

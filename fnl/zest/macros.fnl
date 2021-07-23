@@ -14,7 +14,7 @@
     `(.. "_" (string.gsub ,s "."
                (fn [ZEST_C#] (string.format "%s_" (string.byte ZEST_C#)))))))
 
-(fn _v-lua [f kind id]
+(fn _vlua [f kind id]
   (if id
     `(let [ZEST_ID# ,(_encode id)]
        (tset _G._zest ,kind ZEST_ID# ,f)
@@ -24,18 +24,18 @@
        (tset _G._zest ,kind :# (+ (. _G._zest ,kind :#) 1))
        (.. ,(.. "v:lua._zest." kind ".") ZEST_ID#))))
 
-(fn _v-lua-format [s f kind id]
-  `(string.format ,s ,(_v-lua f kind id)))
+(fn _vlua-format [s f kind id]
+  `(string.format ,s ,(_vlua f kind id)))
 
 (local M {})
 
-; v-lua
+; vlua
 
-(fn M.v-lua [f]
-  `,(_v-lua f :v))
+(fn M.vlua [f]
+  `,(_vlua f :v))
 
-(fn M.v-lua-format [s f]
-  `,(_v-lua-format s f :v))
+(fn M.vlua-format [s f]
+  `,(_vlua-format s f :v))
 
 ; keymaps
 
@@ -67,7 +67,7 @@
 
 (fn M.def-keymap-fn [fs args ...]
   (let [(modes opts) (_keymap-options args)
-        v (_v-lua `(fn [] ,...) :keymap fs)]
+        v (_vlua `(fn [] ,...) :keymap fs)]
     `(let [ZEST_V_LUA# ,v
            ZEST_RHS# (string.format ,(if opts.expr "%s()" ":call %s()<cr>") ZEST_V_LUA#)]
        (each [ZEST_M# (string.gmatch ,modes ".")]
@@ -97,7 +97,7 @@
 
 (fn M.def-autocmd-fn [pattern events ...]
   (let [events (table.concat (xs-str events) ",")
-        v (_v-lua `(fn [] ,...) :autocmd)]
+        v (_vlua `(fn [] ,...) :autocmd)]
     `(let [ZEST_V_LUA# ,v
            ZEST_RHS# (string.format ":call %s()" ZEST_V_LUA#)]
        (vim.api.nvim_command (.. ,(.. "au " events " " ) ,pattern " " ZEST_RHS#)))))
@@ -111,20 +111,22 @@
      (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true})))
 
 (fn M.def-textobject-fn [fs ...]
-  (let [v (_v-lua `(fn [] ,...) :textobject fs)]
+  (let [v (_vlua `(fn [] ,...) :textobject fs)]
     `(let [ZEST_V_LUA# ,v
            ZEST_RHS# (string.format ":<c-u>call %s()<cr>" ZEST_V_LUA#)]
        (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
        (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true}))))
 
+; FIXME (def-vlua-fn []) as a (vlua-format (fn [])) wrapper ?
+; rename vlua to vlua?
 
 ; setoption bakery
 
-;opt-set      opt-local-set      opt-global-set
-;opt-get      opt-local-get      opt-global-get
-;opt-append   opt-local-append   opt-global-append
-;opt-prepend  opt-local-prepend  opt-global-prepend
-;opt-remove   opt-local-remove   opt-global-remove
+; opt-set      opt-local-set      opt-global-set
+; opt-get      opt-local-get      opt-global-get
+; opt-append   opt-local-append   opt-global-append
+; opt-prepend  opt-local-prepend  opt-global-prepend
+; opt-remove   opt-local-remove   opt-global-remove
 
 (fn _opt-set [scope key val]
   (let [key (tostring key)

@@ -53,12 +53,12 @@ Macro names are intentionally quite verbose, remember that you can alias them to
 
 The examples are refreshed with every change to zest and are always up to date.
 
-### v-lua
+### vlua
 
 - Store a function and return its `v:lua`, excluding the parentheses
 
 ```clojure
-(local v (v-lua my-fn))
+(local v (vlua my-fn))
 ```
 ```lua
 local v
@@ -70,28 +70,15 @@ do
 end
 ```
 
-### v-lua-format
+### vlua-format
 
-- A `string.format` wrapper for `v-lua`
+- A `string.format` wrapper for `vlua`
 
 ```clojure
-(vim.api.nvim_command
-  (v-lua-format
-    ":com -nargs=* Mycmd :call %s(<f-args>)"
-    (fn [...]
-      (print ...))))
+{{fnl:vluaformat1}}
 ```
 ```lua
-local function _0_(...)
-  local ZEST_ID_0_ = ("_" .. _G._zest.v["#"])
-  local function _1_(...)
-    return print(...)
-  end
-  _G._zest["v"][ZEST_ID_0_] = _1_
-  _G._zest["v"]["#"] = (_G._zest.v["#"] + 1)
-  return ("v:lua._zest.v." .. ZEST_ID_0_)
-end
-vim.api.nvim_command(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
+{{lua:vluaformat1}}
 ```
 
 ## options
@@ -347,14 +334,14 @@ At compile time, there is no good way of knowing if a variable contains a functi
 
 This is the reason for the having both `def-keymap` and `def-keymap-fn`, for example.
 
-That said, `def-keymap` and others can accept functions if they have been wrapped in `v-lua`:
+That said, `def-keymap` and others can accept functions if they have been wrapped in `vlua`:
 
 ```clojure
 (fn my-fn []
   (print "dinosaurs"))
 
 (def-keymap :<c-m> [n]
-  (v-lua-format
+  (vlua-format
     ":call %s()<cr>"
     my-fn))
 ```
@@ -368,7 +355,7 @@ For now, I would suggest doing something like this:
 ```clojure
 (fn def-command-fn [s f]
   (vim.api.nvim_command
-    (v-lua-format
+    (vlua-format
       (.. ":command " s) f)))
 
 (fn Mycmd [...]
