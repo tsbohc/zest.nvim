@@ -227,11 +227,29 @@ To disable `noremap`, include `:remap` after the modes.
 {{lua:def-textobject-fn1}}
 ```
 
-## zest doesn't have x
+## faq
 
-### user commands
+### why are there two of each macro?
 
-At the moment, there isn't a more concise way to define user commands than straight strings. I don't see much benefit in defining individual arguments with s-expressions: it's far too verbose.
+At compile time, there is no good way of knowing if a variable contains a function or a string. I think so, at least (enlighten me!). This means that the type of the argument has to be supplied to the macro.
+
+This is the reason for the having both `def-keymap` and `def-keymap-fn`, for example.
+
+That said, `def-keymap` can accept functions if they have been wrapped in `v-lua`:
+
+```clojure
+(fn my-fn []
+  (print "dinosaurs"))
+
+(def-keymap :<c-m> [n]
+  (v-lua-format
+    ":call %s()<cr>"
+    my-fn))
+```
+
+### user commands?
+
+Currently, there isn't a more concise way to define user commands than using straight up strings. I don't see much benefit in defining individual arguments with s-expressions: it's far too verbose.
 
 For now, I would suggest doing something like this:
 
