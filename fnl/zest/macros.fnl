@@ -96,45 +96,45 @@
 (fn M.def-augroup-dirty [name ...]
   (_create-augroup true name ...))
 
-;(fn _create-autocmd [raw? pattern events ts]
+;(fn _create-autocmd [raw? events patterns ts]
 ;    (if (not raw?)
 ;      (let [events (table.concat (xs-str events) ",")
-;            pattern (if (= (type pattern) :string) pattern (table.concat pattern ","))]
-;        `(vim.api.nvim_command (.. "au " ,events " " ,pattern " " ,ts)))
-;      `(vim.api.nvim_command (.. "au " (table.concat ,events ",") " " ,pattern " " ,ts))))
+;            patterns (if (= (type patterns) :string) patterns (table.concat patterns ","))]
+;        `(vim.api.nvim_command (.. "au " ,events " " ,patterns " " ,ts)))
+;      `(vim.api.nvim_command (.. "au " (table.concat ,events ",") " " ,patterns " " ,ts))))
 
-(fn _autocmd-options [raw? pattern events]
+(fn _autocmd-options [raw? events patterns]
   (let [events (if (not raw?)
                  (table.concat (xs-str events) ",")
                  events)
-        pattern (if (= (type pattern) :string)
-                  pattern
+        patterns (if (= (type patterns) :string)
+                  patterns
                   (if (not raw?)
-                    (table.concat (xs-str pattern) ",")
-                    pattern))]
-    (values pattern events)))
+                    (table.concat (xs-str patterns) ",")
+                    patterns))]
+    (values events patterns)))
 
-(fn M.def-autocmd [pattern events ts]
-  (let [(pattern events) (_autocmd-options false pattern events)]
-    `(vim.api.nvim_command (.. "au " ,events " " ,pattern " " ,ts))))
+(fn M.def-autocmd [events patterns ts]
+  (let [(events patterns) (_autocmd-options false events patterns)]
+    `(vim.api.nvim_command (.. "au " ,events " " ,patterns " " ,ts))))
 
-(fn M.def-autocmd-fn [pattern events ...]
-  (let [(pattern events) (_autocmd-options false pattern events)
+(fn M.def-autocmd-fn [events patterns ...]
+  (let [(events patterns) (_autocmd-options false events patterns)
         v (_vlua `(fn [] ,...) :autocmd)]
     `(let [ZEST_VLUA# ,v
            ZEST_RHS# (string.format ":call %s()" ZEST_VLUA#)]
-       (vim.api.nvim_command (.. "au " ,events " " ,pattern " " ZEST_RHS#)))))
+       (vim.api.nvim_command (.. "au " ,events " " ,patterns " " ZEST_RHS#)))))
 
-(fn M.def-autocmd-raw [pattern events ts]
-  (let [(pattern events) (_autocmd-options true pattern events)]
-    `(vim.api.nvim_command (.. "au " ,events " " ,pattern " " ,ts))))
+(fn M.def-autocmd-raw [events patterns ts]
+  (let [(events patterns) (_autocmd-options true events patterns)]
+    `(vim.api.nvim_command (.. "au " ,events " " ,patterns " " ,ts))))
 
-(fn M.def-autocmd-fn-raw [pattern events ...]
-  (let [(pattern events) (_autocmd-options true pattern events)
+(fn M.def-autocmd-fn-raw [events patterns ...]
+  (let [(events patterns) (_autocmd-options true events patterns)
         v (_vlua `(fn [] ,...) :autocmd)]
     `(let [ZEST_VLUA# ,v
            ZEST_RHS# (string.format ":call %s()" ZEST_VLUA#)]
-       (vim.api.nvim_command (.. "au " ,events " " ,pattern " " ZEST_RHS#)))))
+       (vim.api.nvim_command (.. "au " ,events " " ,patterns " " ZEST_RHS#)))))
 
 ; ^ some code duplication, but I think it's more readable this way
 

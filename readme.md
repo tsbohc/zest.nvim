@@ -240,10 +240,11 @@ end
 - Define an autocommand
 
 ```clojure
-(def-autocmd "*" [VimResized] "wincmd =")
+(def-autocmd [BufNewFile BufRead] [:*.html :*.xml]
+  "setlocal nowrap")
 ```
 ```lua
-vim.api.nvim_command(("au " .. "VimResized" .. " " .. "*" .. " " .. "wincmd ="))
+vim.api.nvim_command(("au " .. "BufNewFile,BufRead" .. " " .. "*.html,*.xml" .. " " .. "setlocal nowrap"))
 ```
 
 ### def-autocmd-fn
@@ -252,7 +253,7 @@ vim.api.nvim_command(("au " .. "VimResized" .. " " .. "*" .. " " .. "wincmd ="))
 
 ```clojure
 (def-augroup :restore-position
-  (def-autocmd-fn "*" [BufReadPost]
+  (def-autocmd-fn [BufReadPost] "*"
     (when (and (> (vim.fn.line "'\"") 1)
                (<= (vim.fn.line "'\"") (vim.fn.line "$")))
       (vim.cmd "normal! g'\""))))
