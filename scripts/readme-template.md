@@ -231,11 +231,11 @@ To disable `noremap`, include `:remap` after the modes.
 
 ### why are there two of each macro?
 
-At compile time, there is no good way of knowing if a variable contains a function or a string. I think so, at least (enlighten me!). This means that the type of the argument has to be supplied to the macro.
+At compile time, there is no good way of knowing if a variable contains a function or a string. I think so, at least (enlighten me!). This means that the type of the argument has to be supplied to the macro explicitly.
 
 This is the reason for the having both `def-keymap` and `def-keymap-fn`, for example.
 
-That said, `def-keymap` can accept functions if they have been wrapped in `v-lua`:
+That said, `def-keymap` and others can accept functions if they have been wrapped in `v-lua`:
 
 ```clojure
 (fn my-fn []
