@@ -96,16 +96,47 @@
 (fn M.def-augroup-dirty [name ...]
   (_create-augroup true name ...))
 
+;(fn _create-autocmd [raw? pattern events ts]
+;    (if (not raw?)
+;      (let [events (table.concat (xs-str events) ",")
+;            pattern (if (= (type pattern) :string) pattern (table.concat pattern ","))]
+;        `(vim.api.nvim_command (.. "au " ,events " " ,pattern " " ,ts)))
+;      `(vim.api.nvim_command (.. "au " (table.concat ,events ",") " " ,pattern " " ,ts))))
+
+(fn _autocmd-options [raw? pattern events]
+  (let [events (if (not raw?)
+                 (table.concat (xs-str events) ",")
+                 events)
+        pattern (if (= (type pattern) :string)
+                  pattern
+                  (if (not raw?)
+                    (table.concat (xs-str pattern) ",")
+                    pattern))]
+    (values pattern events)))
+
 (fn M.def-autocmd [pattern events ts]
-  (let [events (table.concat (xs-str events) ",")]
+  (let [(pattern events) (_autocmd-options false pattern events)]
     `(vim.api.nvim_command (.. "au " ,events " " ,pattern " " ,ts))))
 
 (fn M.def-autocmd-fn [pattern events ...]
-  (let [events (table.concat (xs-str events) ",")
+  (let [(pattern events) (_autocmd-options false pattern events)
         v (_vlua `(fn [] ,...) :autocmd)]
     `(let [ZEST_VLUA# ,v
            ZEST_RHS# (string.format ":call %s()" ZEST_VLUA#)]
-       (vim.api.nvim_command (.. ,(.. "au " events " " ) ,pattern " " ZEST_RHS#)))))
+       (vim.api.nvim_command (.. "au " ,events " " ,pattern " " ZEST_RHS#)))))
+
+(fn M.def-autocmd-raw [pattern events ts]
+  (let [(pattern events) (_autocmd-options true pattern events)]
+    `(vim.api.nvim_command (.. "au " ,events " " ,pattern " " ,ts))))
+
+(fn M.def-autocmd-fn-raw [pattern events ...]
+  (let [(pattern events) (_autocmd-options true pattern events)
+        v (_vlua `(fn [] ,...) :autocmd)]
+    `(let [ZEST_VLUA# ,v
+           ZEST_RHS# (string.format ":call %s()" ZEST_VLUA#)]
+       (vim.api.nvim_command (.. "au " ,events " " ,pattern " " ZEST_RHS#)))))
+
+; ^ some code duplication, but I think it's more readable this way
 
 ; textobject
 
