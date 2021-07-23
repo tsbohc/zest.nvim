@@ -37,6 +37,11 @@
 (fn M.vlua-format [s f]
   `,(_vlua-format s f :v))
 
+; TODO pointless?
+(fn M.def-vlua-fn [s ...]
+  (let [f `(fn ,...)]
+    `,(_vlua-format s f :v)))
+
 ; keymaps
 
 (fn _keymap-options [args]
@@ -68,8 +73,8 @@
 (fn M.def-keymap-fn [fs args ...]
   (let [(modes opts) (_keymap-options args)
         v (_vlua `(fn [] ,...) :keymap fs)]
-    `(let [ZEST_V_LUA# ,v
-           ZEST_RHS# (string.format ,(if opts.expr "%s()" ":call %s()<cr>") ZEST_V_LUA#)]
+    `(let [ZEST_VLUA# ,v
+           ZEST_RHS# (string.format ,(if opts.expr "%s()" ":call %s()<cr>") ZEST_VLUA#)]
        (each [ZEST_M# (string.gmatch ,modes ".")]
          (vim.api.nvim_set_keymap ZEST_M# ,fs ZEST_RHS# ,opts)))))
 
@@ -98,8 +103,8 @@
 (fn M.def-autocmd-fn [pattern events ...]
   (let [events (table.concat (xs-str events) ",")
         v (_vlua `(fn [] ,...) :autocmd)]
-    `(let [ZEST_V_LUA# ,v
-           ZEST_RHS# (string.format ":call %s()" ZEST_V_LUA#)]
+    `(let [ZEST_VLUA# ,v
+           ZEST_RHS# (string.format ":call %s()" ZEST_VLUA#)]
        (vim.api.nvim_command (.. ,(.. "au " events " " ) ,pattern " " ZEST_RHS#)))))
 
 ; textobject
@@ -112,13 +117,42 @@
 
 (fn M.def-textobject-fn [fs ...]
   (let [v (_vlua `(fn [] ,...) :textobject fs)]
-    `(let [ZEST_V_LUA# ,v
-           ZEST_RHS# (string.format ":<c-u>call %s()<cr>" ZEST_V_LUA#)]
+    `(let [ZEST_VLUA# ,v
+           ZEST_RHS# (string.format ":<c-u>call %s()<cr>" ZEST_VLUA#)]
        (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
        (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true}))))
 
-; FIXME (def-vlua-fn []) as a (vlua-format (fn [])) wrapper ?
-; rename vlua to vlua?
+; textoperator
+
+(fn M.def-operator [fs f]
+  (let [op `(fn [KIND#]
+              (let [REG# (vim.api.nvim_eval "@@")
+                    ;KIND# (if (tonumber KIND#) :count KIND#)
+                    ]
+                (print KIND#) ; => V, ^V
+                (match KIND#
+                  ;:count (vim.api.nvim_command (.. "norm! V" vim.v.count1 "$y"))
+                  :line  (vim.api.nvim_command "norm! `[V`]y")
+                  ;:V  (vim.api.nvim_command "norm! `[V`]y")
+                  :char  (vim.api.nvim_command "norm! `[v`]y")
+                  ;_#     (vim.api.nvim_command (.. "norm! `<" KIND# "`>y"))
+                  :block (vim.api.nvim_command "norm! `[<c-v>`]y")
+                  _#     (vim.api.nvim_command (.. "norm! `<" KIND# "`>y")) ; double press
+                  )
+                (let [CONTEXT# (vim.api.nvim_eval "@@")
+                      OUTPUT# (,f CONTEXT# KIND#)]
+                  (when OUTPUT#
+                    (vim.fn.setreg "@" OUTPUT# (vim.fn.getregtype "@"))
+                    (vim.api.nvim_command "norm! gv\"0p"))
+                  (vim.fn.setreg "@@" REG# (vim.fn.getregtype "@@")))))]
+    `(let [VLUA# ,(_vlua op :operator fs)
+           RHS_TEXTOBJECT# (.. ":set operatorfunc=" VLUA# "<cr>g@")
+           RHS_VISUAL# (.. ":<c-u>call " VLUA# "(visualmode())<cr>")
+           LHS_DOUBLE# (.. ,fs (string.sub ,fs -1))
+           RHS_DOUBLE# (.. ":<c-u>call " VLUA# "(v:count1)<cr>")]
+       (vim.api.nvim_set_keymap "n" ,fs RHS_TEXTOBJECT# {:noremap true :silent true})
+       (vim.api.nvim_set_keymap "n" LHS_DOUBLE# RHS_DOUBLE# {:noremap true :silent true})
+       (vim.api.nvim_set_keymap "v" ,fs RHS_VISUAL# {:noremap true :silent true}))))
 
 ; setoption bakery
 

@@ -69,10 +69,10 @@ The examples are refreshed with every change to zest and are always up to date.
 - A `string.format` wrapper for `vlua`
 
 ```clojure
-{{fnl:vluaformat1}}
+{{fnl:vlua-format1}}
 ```
 ```lua
-{{lua:vluaformat1}}
+{{lua:vlua-format1}}
 ```
 
 ## options

@@ -75,10 +75,23 @@ end
 - A `string.format` wrapper for `vlua`
 
 ```clojure
-{{fnl:vluaformat1}}
+(vim.api.nvim_command
+  (vlua-format
+    ":com -nargs=* Mycmd :call %s(<f-args>)"
+    (fn [...]
+      (print ...))))
 ```
 ```lua
-{{lua:vluaformat1}}
+local function _0_(...)
+  local ZEST_ID_0_ = ("_" .. _G._zest.v["#"])
+  local function _1_(...)
+    return print(...)
+  end
+  _G._zest["v"][ZEST_ID_0_] = _1_
+  _G._zest["v"]["#"] = (_G._zest.v["#"] + 1)
+  return ("v:lua._zest.v." .. ZEST_ID_0_)
+end
+vim.api.nvim_command(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
 ```
 
 ## options
@@ -159,16 +172,16 @@ To disable `noremap`, include `:remap` after the modes.
 ```
 ```lua
 do
-  local ZEST_V_LUA_0_
+  local ZEST_VLUA_0_
   do
     local ZEST_ID_0_ = "_60_99_45_109_62_"
     local function _0_()
       return print("hello from fennel!")
     end
     _G._zest["keymap"][ZEST_ID_0_] = _0_
-    ZEST_V_LUA_0_ = ("v:lua._zest.keymap." .. ZEST_ID_0_)
+    ZEST_VLUA_0_ = ("v:lua._zest.keymap." .. ZEST_ID_0_)
   end
-  local ZEST_RHS_0_ = string.format(":call %s()<cr>", ZEST_V_LUA_0_)
+  local ZEST_RHS_0_ = string.format(":call %s()<cr>", ZEST_VLUA_0_)
   for ZEST_M_0_ in string.gmatch("n", ".") do
     vim.api.nvim_set_keymap(ZEST_M_0_, "<c-m>", ZEST_RHS_0_, {noremap = true})
   end
@@ -183,7 +196,7 @@ end
 ```
 ```lua
 do
-  local ZEST_V_LUA_0_
+  local ZEST_VLUA_0_
   do
     local ZEST_ID_0_ = "_107_"
     local function _0_()
@@ -194,9 +207,9 @@ do
       end
     end
     _G._zest["keymap"][ZEST_ID_0_] = _0_
-    ZEST_V_LUA_0_ = ("v:lua._zest.keymap." .. ZEST_ID_0_)
+    ZEST_VLUA_0_ = ("v:lua._zest.keymap." .. ZEST_ID_0_)
   end
-  local ZEST_RHS_0_ = string.format("%s()", ZEST_V_LUA_0_)
+  local ZEST_RHS_0_ = string.format("%s()", ZEST_VLUA_0_)
   for ZEST_M_0_ in string.gmatch("nv", ".") do
     vim.api.nvim_set_keymap(ZEST_M_0_, "k", ZEST_RHS_0_, {expr = true, noremap = true})
   end
@@ -249,7 +262,7 @@ do
   vim.api.nvim_command(("augroup " .. "restore-position"))
   vim.api.nvim_command("autocmd!")
   do
-    local ZEST_V_LUA_0_
+    local ZEST_VLUA_0_
     do
       local ZEST_ID_0_ = ("_" .. _G._zest.autocmd["#"])
       local function _0_()
@@ -259,9 +272,9 @@ do
       end
       _G._zest["autocmd"][ZEST_ID_0_] = _0_
       _G._zest["autocmd"]["#"] = (_G._zest.autocmd["#"] + 1)
-      ZEST_V_LUA_0_ = ("v:lua._zest.autocmd." .. ZEST_ID_0_)
+      ZEST_VLUA_0_ = ("v:lua._zest.autocmd." .. ZEST_ID_0_)
     end
-    local ZEST_RHS_0_ = string.format(":call %s()", ZEST_V_LUA_0_)
+    local ZEST_RHS_0_ = string.format(":call %s()", ZEST_VLUA_0_)
     vim.api.nvim_command(("au BufReadPost " .. "*" .. " " .. ZEST_RHS_0_))
   end
   vim.api.nvim_command("augroup END")
@@ -311,16 +324,16 @@ end
 ```
 ```lua
 do
-  local ZEST_V_LUA_0_
+  local ZEST_VLUA_0_
   do
     local ZEST_ID_0_ = "_97_108_"
     local function _0_()
       return vim.cmd("norm! $v0")
     end
     _G._zest["textobject"][ZEST_ID_0_] = _0_
-    ZEST_V_LUA_0_ = ("v:lua._zest.textobject." .. ZEST_ID_0_)
+    ZEST_VLUA_0_ = ("v:lua._zest.textobject." .. ZEST_ID_0_)
   end
-  local ZEST_RHS_0_ = string.format(":<c-u>call %s()<cr>", ZEST_V_LUA_0_)
+  local ZEST_RHS_0_ = string.format(":<c-u>call %s()<cr>", ZEST_VLUA_0_)
   vim.api.nvim_set_keymap("x", "al", ZEST_RHS_0_, {noremap = true, silent = true})
   vim.api.nvim_set_keymap("o", "al", ZEST_RHS_0_, {noremap = true, silent = true})
 end

@@ -30,7 +30,7 @@ local function config(xt)
   return conf
 end
 M.setup = function(xt)
-  _G._zest = {autocmd = {["#"] = 1}, config = config(xt), keymap = {}, textobject = {}, v = {["#"] = 1}}
+  _G._zest = {autocmd = {["#"] = 1}, config = config(xt), keymap = {}, operator = {}, textobject = {}, v = {["#"] = 1}}
   return nil
 end
 return M

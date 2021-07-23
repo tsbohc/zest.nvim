@@ -36,6 +36,7 @@
        {:keymap {}
         :autocmd {:# 1}
         :textobject {}
+        :operator {}
         :v {:# 1}
         :config (config xt)}))
 
