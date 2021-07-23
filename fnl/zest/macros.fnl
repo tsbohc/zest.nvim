@@ -158,24 +158,39 @@
 (fn M.def-operator [fs f]
   (let [op `(fn [KIND#]
               (let [REG# (vim.api.nvim_eval "@@")
-                    ;KIND# (if (tonumber KIND#) :count KIND#)
-                    ]
-                (print KIND#) ; => V, ^V
+                    REG_TYPE# (vim.fn.getregtype "@@")
+                    SELECTION# vim.opt.selection
+                    CLIPBOARD# vim.opt.clipboard
+                    KIND# (if (tonumber KIND#) :count KIND#)
+                    C-V# (vim.api.nvim_replace_termcodes "<c-v>" true true true)]
+                (tset vim.opt :selection "inclusive")
+                (: vim.opt.clipboard :remove :unnamed)
+                (: vim.opt.clipboard :remove :unnamedplus)
+                (var INPUT_REG_TYPE# "") ;
                 (match KIND#
-                  ;:count (vim.api.nvim_command (.. "norm! V" vim.v.count1 "$y"))
-                  :line  (vim.api.nvim_command "norm! `[V`]y")
-                  ;:V  (vim.api.nvim_command "norm! `[V`]y")
-                  :char  (vim.api.nvim_command "norm! `[v`]y")
-                  ;_#     (vim.api.nvim_command (.. "norm! `<" KIND# "`>y"))
-                  :block (vim.api.nvim_command "norm! `[<c-v>`]y")
-                  _#     (vim.api.nvim_command (.. "norm! `<" KIND# "`>y")) ; double press
+                  :count (do (vim.api.nvim_command (.. "norm! V" vim.v.count1 "$y"))
+                           (set INPUT_REG_TYPE# "l"))  ; count + double
+                  :V     (do (vim.api.nvim_command "norm! gvy")
+                           (set INPUT_REG_TYPE# "l"))  ; v-line
+                  C-V#   (do (vim.api.nvim_command "norm! gvy")
+                           (set INPUT_REG_TYPE# "b"))  ; v-block
+                  :v     (do (vim.api.nvim_command "norm! gvy")
+                           (set INPUT_REG_TYPE# "c"))  ; v-char
+                  :line  (do (vim.api.nvim_command "norm! `[V`]y")
+                           (set INPUT_REG_TYPE# "l"))  ; m-line
+                  :block (do (vim.api.nvim_command "norm! `[<c-v>`]y")
+                           (set INPUT_REG_TYPE# "b"))  ; m-block
+                  :char  (do (vim.api.nvim_command "norm! `[v`]y")
+                           (set INPUT_REG_TYPE# "c"))  ; m-char
                   )
-                (let [CONTEXT# (vim.api.nvim_eval "@@")
-                      OUTPUT# (,f CONTEXT# KIND#)]
+                (let [INPUT# (vim.api.nvim_eval "@@")
+                      OUTPUT# (,f INPUT# KIND#)]
                   (when OUTPUT#
-                    (vim.fn.setreg "@" OUTPUT# (vim.fn.getregtype "@"))
-                    (vim.api.nvim_command "norm! gv\"0p"))
-                  (vim.fn.setreg "@@" REG# (vim.fn.getregtype "@@")))))]
+                    (vim.fn.setreg "@" OUTPUT# INPUT_REG_TYPE#)
+                    (vim.api.nvim_command "norm! gvp"))
+                  (vim.fn.setreg "@@" REG# REG_TYPE#)
+                  (tset vim.opt :selection SELECTION#)
+                  (tset vim.opt :clipboard CLIPBOARD#))))]
     `(let [VLUA# ,(_vlua op :operator fs)
            RHS_TEXTOBJECT# (.. ":set operatorfunc=" VLUA# "<cr>g@")
            RHS_VISUAL# (.. ":<c-u>call " VLUA# "(visualmode())<cr>")
