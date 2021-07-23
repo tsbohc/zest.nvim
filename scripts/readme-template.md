@@ -257,18 +257,18 @@ If you need to pass variables to the definition, use `def-autocmd-raw` and `def-
 (local my-pattern (table.concat ["latex" "markdown"] ","))
 (local my-events "FileType")
 
-(def-autocmd-raw my-pattern my-events
+(def-autocmd-raw my-events my-pattern
   ":set nowrap")
 
-(def-autocmd-fn-raw my-pattern my-events
+(def-autocmd-fn-raw my-events my-pattern
   (opt-set wrap false))
 ```
 
 Or, for something more complex, `vlua`:
 
 ```clojure
-(let [ponder "CursorHold"]
-  (vim.api.nvim_command
+(vim.api.nvim_command
+  (let [ponder "CursorHold"]
     (vlua-format
       (.. ":autocmd " ponder " <buffer=42> ++once :call %s()")
       (fn []
