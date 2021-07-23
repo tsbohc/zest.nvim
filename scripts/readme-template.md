@@ -227,9 +227,9 @@ To disable `noremap`, include `:remap` after the modes.
 {{lua:def-textobject-fn1}}
 ```
 
-## faq
+## why does zest x
 
-### why are there two of each macro?
+### have two of each macro
 
 At compile time, there is no good way of knowing if a variable contains a function or a string. I think so, at least (enlighten me!). This means that the type of the argument has to be supplied to the macro explicitly.
 
@@ -247,7 +247,35 @@ That said, `def-keymap` and others can accept functions if they have been wrappe
     my-fn))
 ```
 
-### user commands?
+### implement autocmds as it does
+
+It's debatable, but I've made the decision in favour of syntactic sweetness. More often than not I see autocmds defined in place, with a concrete set of parameters.
+
+If you need to pass variables to the definition, use `def-autocmd-raw` and `def-autocmd-fn-raw`:
+
+```clojure
+(local my-pattern (table.concat ["latex" "markdown"] ","))
+(local my-events "FileType")
+
+(def-autocmd-raw my-pattern my-events
+  ":set nowrap")
+
+(def-autocmd-fn-raw my-pattern my-events
+  (opt-set wrap false))
+```
+
+Or, for something more complex, `vlua`:
+
+```clojure
+(let [ponder "CursorHold"]
+  (vim.api.nvim_command
+    (vlua-format
+      (.. ":autocmd " ponder " <buffer=42> ++once :call %s()")
+      (fn []
+        (print "42")))))
+```
+
+### not feature user commands
 
 Currently, there isn't a more concise way to define user commands than using straight up strings. I don't see much benefit in defining individual arguments with s-expressions: it's far too verbose.
 
