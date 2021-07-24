@@ -36,6 +36,8 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 
 ### setup
 
+Running `zest.setup` will initialize `_G._zest` which will be referenced in the code output by the macros. It has to be run before any of the macros are used.
+
 By default, zest will mirror the `stdpath/fnl` directory tree (or one that is symlinked to that path) to `stdpath/lua`. When a relevant file is saved, zest will display a message and recompile it.
 
 ```clojure
@@ -410,6 +412,9 @@ For now, I would suggest doing something like this:
 
 # thanks
 
-- [Hauleth](https://old.reddit.com/user/Hauleth) for this [post](https://old.reddit.com/r/neovim/comments/n5dczu/when_vim_and_lisp_are_your_love/), which sparked my interest in fennel
+- [bakpakin](https://github.com/bakpakin) for [fennel](https://github.com/bakpakin/Fennel), a wonderful dialect for a wonderful language
 - [Olical](https://github.com/Olical) for aniseed and being awesome
 - [ElKowar](https://github.com/elkowar) for sharing his thoughts and his discord status
+- [Hauleth](https://old.reddit.com/user/Hauleth) for this [post](https://old.reddit.com/r/neovim/comments/n5dczu/when_vim_and_lisp_are_your_love/), which sparked my interest in fennel
+
+> zest embeds `fennel.lua`, but I do not claim ownership over this file and it should not be considered under my license
