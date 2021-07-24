@@ -228,6 +228,24 @@
   "set 'k' to 'v' on vim.g table"
   `(tset vim.g ,(tostring k) ,v))
 
+; config
+
+(fn M.zest-config [xt]
+  `(let [ZEST_CONF# ,xt
+         ZEST_DEFAULT_CONF#
+         {:source (vim.fn.resolve (.. (vim.fn.stdpath :config) "/fnl"))
+          :target (vim.fn.resolve (.. (vim.fn.stdpath :config) "/lua"))
+          :verbose-compiler true
+          :disable-compiler false}]
+     (when ZEST_CONF#
+       (each [ZEST_K# ZEST_V# (pairs ZEST_CONF#)]
+         (tset ZEST_DEFAULT_CONF# ZEST_K# ZEST_V#)))
+     (tset _G :_zest
+          {:keymap {}
+           :autocmd {:# 1}
+           :v {:# 1}
+           :config ZEST_DEFAULT_CONF#})))
+
 ; highlight?
 
 M

@@ -24,29 +24,28 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 - Install with your favourite package manager
 ```clojure
 (use :tsbohc/zest.nvim)
-(let [z (require :zest)] (z.setup))
 ```
-
-- Import macros, aliasing them as you wish
+- Run `zest.setup` to initialise `_G._zest` before using any of the macros
 ```clojure
-(import-macros {:opt-prepend opt^} :zest.macros)
+(let [zest (require :zest)]
+  (zest.setup
+    {:source (vim.fn.resolve (.. (vim.fn.stdpath :config) "/fnl"))
+     :target (vim.fn.resolve (.. (vim.fn.stdpath :config) "/lua"))
+     :verbose-compiler true
+     :disable-compiler false}))
 ```
 
-Running `zest.setup` will initialize `_G._zest` referenced in the code output by the macros. It has to be run before any of the macros are used.
+- Import the macros you wish to use at the top of a file, aliasing them as you like
+```clojure
+(import-macros
+  {:opt-prepend opt^} :zest.macros)
+```
 
 By default, zest will mirror the `stdpath/fnl` directory tree (or one that is symlinked to that path) to `stdpath/lua`. When a relevant file is saved, zest will display a message and recompile it.
 
 There will be no prompt before overriding a target lua file. Be careful!
 
-### defaults
-
-```clojure
-(z.setup
-  {:source (vim.fn.resolve (.. (vim.fn.stdpath :config) "/fnl"))
-   :target (vim.fn.resolve (.. (vim.fn.stdpath :config) "/lua"))
-   :verbose-compiler true
-   :disable-compiler false})
-```
+</details>
 
 # macros
 In each example, the top block contains the fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
