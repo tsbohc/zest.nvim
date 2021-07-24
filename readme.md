@@ -12,7 +12,7 @@ The plugin can be installed on its own or together with [aniseed](https://github
 
 ### features
 
-- Virtually no startup penalty: <0.1ms
+- Virtually no startup penalty, <0.1ms
 - Almost everything is done at compile time using macros
 - Lazy-loads the fennel compiler on `BufWritePost`
 - Automatically recompiles `fnl/` to `lua/`
@@ -342,9 +342,9 @@ do
 end
 ```
 
-## why does zest x
+## notes
 
-### have two of each macro
+### the tale of two macros
 
 At compile time, there is no good way of knowing if a variable contains a function or a string. I think so, at least (enlighten me!). This means that the type of the argument has to be supplied to the macro explicitly.
 
@@ -362,50 +362,33 @@ That said, `def-keymap` and others can accept functions if they have been wrappe
     my-fn))
 ```
 
-### implement autocmds as it does
+### complex autocmds
 
-It's debatable, but I've made the decision in favour of syntactic sweetness. More often than not I see autocmds defined in place, with a concrete set of parameters.
+It's debatable, but with `def-autocmd` and `def-autocmd-fn` I've made the decision in favour of syntactic sweetness. More often than not I see autocmds defined in place, with a concrete set of parameters.
 
-If you need to pass variables to the definition, use `def-autocmd-raw` and `def-autocmd-fn-raw`:
-
-```clojure
-(local my-pattern (table.concat ["latex" "markdown"] ","))
-(local my-events "FileType")
-
-(def-autocmd-raw my-events my-pattern
-  ":set nowrap")
-
-(def-autocmd-fn-raw my-events my-pattern
-  (opt-set wrap false))
-```
-
-Or, for something more complex, `vlua`:
+If you need to pass events to the definition or create complex autocmds, use `vlua`:
 
 ```clojure
-(vim.api.nvim_command
-  (let [ponder "CursorHold"]
-    (vlua-format
-      (.. ":autocmd " ponder " <buffer=42> ++once :call %s()")
-      (fn []
-        (print "42")))))
+(vim.cmd
+  (vlua-format
+    (.. ":autocmd " ponder " * <buffer=42> ++once :call %s()")
+    print-answer))
 ```
 
-### not feature user commands
+### user commands
 
-Currently, there isn't a more concise way to define user commands than using straight up strings. I don't see much benefit in defining individual arguments with s-expressions: it's far too verbose.
+There isn't a more concise way to define user commands than using straight up strings. I don't see much benefit in passing individual arguments with s-expressions or lists: it's far too verbose.
 
 For now, I would suggest doing something like this:
 
 ```clojure
-(fn def-command-fn [s f]
-  (vim.api.nvim_command
-    (vlua-format
-      (.. ":command " s) f)))
+(fn def-command [s fn]
+  (vim.cmd
+    (if fn
+      (vlua-format (.. ":command " s) fn)
+      (.. ":command " s))))
 
-(fn Mycmd [...]
-  (print ...))
-
-(def-cmd-fn
+(def-command
   "-nargs=* Mycmd :call %s(<f-args>)"
   Mycmd)
 ```
@@ -413,8 +396,8 @@ For now, I would suggest doing something like this:
 # thanks
 
 - [bakpakin](https://github.com/bakpakin) for [fennel](https://github.com/bakpakin/Fennel), a wonderful dialect for a wonderful language
-- [Olical](https://github.com/Olical) for aniseed and being awesome
+- [Olical](https://github.com/Olical) for [aniseed](https://github.com/Olical/aniseed) and being awesome
 - [ElKowar](https://github.com/elkowar) for sharing his thoughts and his discord status
 - [Hauleth](https://old.reddit.com/user/Hauleth) for this [post](https://old.reddit.com/r/neovim/comments/n5dczu/when_vim_and_lisp_are_your_love/), which sparked my interest in fennel
 
-> zest embeds `fennel.lua`, but I do not claim ownership over this file and it should not be considered under my license
+> zest embeds `fennel.lua`. I do not claim any ownership over this file

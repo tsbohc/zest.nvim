@@ -8,6 +8,7 @@
 ; internal
 
 (fn _encode [s]
+  "convert characters of string 's' to byte_"
   (if (= (type s) :string)
     `,(.. "_" (string.gsub s "."
                 (fn [ZEST_C#] (string.format "%s_" (string.byte ZEST_C#)))))
@@ -15,6 +16,7 @@
                (fn [ZEST_C#] (string.format "%s_" (string.byte ZEST_C#)))))))
 
 (fn _vlua [f kind id]
+  "store function 'f' into _G._zest and return its v:lua"
   (if id
     `(let [ZEST_ID# ,(_encode id)]
        (tset _G._zest ,kind ZEST_ID# ,f)
@@ -25,6 +27,7 @@
        (.. ,(.. "v:lua._zest." kind ".") ZEST_ID#))))
 
 (fn _vlua-format [s f kind id]
+  "a string.format wrapper for _vlua"
   `(string.format ,s ,(_vlua f kind id)))
 
 (local M {})
@@ -32,20 +35,22 @@
 ; vlua
 
 (fn M.vlua [f]
+  "a user macro for _vlua"
   `,(_vlua f :v))
 
 (fn M.vlua-format [s f]
+  "a user macro for _vlua-format"
   `,(_vlua-format s f :v))
 
-; TODO pointless?
-(fn M.def-vlua-fn [s ...]
-  (let [f `(fn ,...)]
-    `,(_vlua-format s f :v)))
+; TODO redundant?
+;(fn M.def-vlua-fn [s ...]
+;  (let [f `(fn ,...)]
+;    `,(_vlua-format s f :v)))
 
 ; keymaps
 
 (fn _keymap-options [args]
-  "convert seq of options 'args' to modes string and keymap option dict"
+  "convert seq of options 'args' to 'modes' string and keymap 'opts'"
   (let [modes (tostring (table.remove args 1))
         opts-xs (xs-str args)
         opts {:noremap true}]
@@ -81,6 +86,7 @@
 ; autocmd
 
 (fn _create-augroup [dirty? name ...]
+  "define a new augroup, with or without autocmd!"
   (let [out []]
     (when (not dirty?)
       (table.insert out `(vim.api.nvim_command "autocmd!")))
@@ -96,47 +102,23 @@
 (fn M.def-augroup-dirty [name ...]
   (_create-augroup true name ...))
 
-;(fn _create-autocmd [raw? events patterns ts]
-;    (if (not raw?)
-;      (let [events (table.concat (xs-str events) ",")
-;            patterns (if (= (type patterns) :string) patterns (table.concat patterns ","))]
-;        `(vim.api.nvim_command (.. "au " ,events " " ,patterns " " ,ts)))
-;      `(vim.api.nvim_command (.. "au " (table.concat ,events ",") " " ,patterns " " ,ts))))
-
-(fn _autocmd-options [raw? events patterns]
-  (let [events (if (not raw?)
-                 (table.concat (xs-str events) ",")
-                 events)
+(fn _autocmd-options [events patterns]
+  (let [events (table.concat (xs-str events) ",")
         patterns (if (= (type patterns) :string)
-                  patterns
-                  (if (not raw?)
-                    (table.concat (xs-str patterns) ",")
-                    patterns))]
+                   patterns
+                   (table.concat (xs-str patterns) ","))]
     (values events patterns)))
 
 (fn M.def-autocmd [events patterns ts]
-  (let [(events patterns) (_autocmd-options false events patterns)]
+  (let [(events patterns) (_autocmd-options events patterns)]
     `(vim.api.nvim_command (.. "au " ,events " " ,patterns " " ,ts))))
 
 (fn M.def-autocmd-fn [events patterns ...]
-  (let [(events patterns) (_autocmd-options false events patterns)
+  (let [(events patterns) (_autocmd-options events patterns)
         v (_vlua `(fn [] ,...) :autocmd)]
     `(let [ZEST_VLUA# ,v
            ZEST_RHS# (string.format ":call %s()" ZEST_VLUA#)]
        (vim.api.nvim_command (.. "au " ,events " " ,patterns " " ZEST_RHS#)))))
-
-(fn M.def-autocmd-raw [events patterns ts]
-  (let [(events patterns) (_autocmd-options true events patterns)]
-    `(vim.api.nvim_command (.. "au " ,events " " ,patterns " " ,ts))))
-
-(fn M.def-autocmd-fn-raw [events patterns ...]
-  (let [(events patterns) (_autocmd-options true events patterns)
-        v (_vlua `(fn [] ,...) :autocmd)]
-    `(let [ZEST_VLUA# ,v
-           ZEST_RHS# (string.format ":call %s()" ZEST_VLUA#)]
-       (vim.api.nvim_command (.. "au " ,events " " ,patterns " " ZEST_RHS#)))))
-
-; ^ some code duplication, but I think it's more readable this way
 
 ; textobject
 
