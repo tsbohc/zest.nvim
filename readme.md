@@ -29,16 +29,18 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 (let [z (require :zest)] (z.setup))
 ```
 
-- Import macros, renaming them as you wish
+- Import macros, aliasing them as you wish
 ```clojure
 (import-macros {:opt-prepend opt^} :zest.macros)
 ```
 
-### setup
-
 Running `zest.setup` will initialize `_G._zest` which will be referenced in the code output by the macros. It has to be run before any of the macros are used.
 
 By default, zest will mirror the `stdpath/fnl` directory tree (or one that is symlinked to that path) to `stdpath/lua`. When a relevant file is saved, zest will display a message and recompile it.
+
+There will be no prompt before overriding a target lua file. Be careful!
+
+### defaults
 
 ```clojure
 (z.setup
@@ -50,8 +52,6 @@ By default, zest will mirror the `stdpath/fnl` directory tree (or one that is sy
 
 # macros
 In each example, the top block contains the fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
-
-Macro names are intentionally quite verbose, remember that you can alias them to something much shorter.
 
 The examples are refreshed with every change to zest and are always up to date.
 
