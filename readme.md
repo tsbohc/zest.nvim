@@ -8,9 +8,7 @@ a pinch of lisp for a tangy init.lua
 
 An opinionated macro library that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
 
-For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl).
-
-The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
+For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl). The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
 
 ### features
 
@@ -34,7 +32,7 @@ The plugin can be installed on its own or together with [aniseed](https://github
 (import-macros {:opt-prepend opt^} :zest.macros)
 ```
 
-Running `zest.setup` will initialize `_G._zest` which will be referenced in the code output by the macros. It has to be run before any of the macros are used.
+Running `zest.setup` will initialize `_G._zest` referenced in the code output by the macros. It has to be run before any of the macros are used.
 
 By default, zest will mirror the `stdpath/fnl` directory tree (or one that is symlinked to that path) to `stdpath/lua`. When a relevant file is saved, zest will display a message and recompile it.
 
@@ -302,7 +300,7 @@ end
 
 ## notes
 
-### the tale of two macros
+### a tale of two macros
 
 At compile time, there is no good way of knowing if a variable contains a function or a string. I think so, at least (enlighten me!). This means that the type of the argument has to be supplied to the macro explicitly.
 
@@ -328,10 +326,8 @@ I would suggest doing something like this:
 
 ```clojure
 (fn def-command [s f]
-  (vim.cmd
-    (if f
-      (vlua-format (.. ":command " s) f)
-      (.. ":command " s))))
+  (let [s (.. ":command " s)]
+    (vim.cmd (if f (vlua-format s f) s))))
 
 (def-command
   "-nargs=* Mycmd :call %s(<f-args>)"
