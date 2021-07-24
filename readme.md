@@ -8,6 +8,8 @@ a pinch of lisp for a tangy init.lua
 
 An opinionated macro library that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
 
+For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl).
+
 The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
 
 ### features
@@ -18,8 +20,6 @@ The plugin can be installed on its own or together with [aniseed](https://github
 - Automatically recompiles `fnl/` to `lua/`
 
 <b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me in an issue or at @tsbohc on the [conjure discord](conjure.fun/discord).
-
-For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl).
 
 ## usage
 
@@ -320,19 +320,6 @@ That said, `def-keymap` and others can accept functions if they have been wrappe
     my-fn))
 ```
 
-### complex autocmds
-
-It's debatable, but with `def-autocmd` and `def-autocmd-fn` I've made the decision in favour of syntactic sweetness. More often than not I see autocmds defined in place, with a concrete set of parameters.
-
-If you need to pass events to the definition or create complex autocmds, use `vlua`:
-
-```clojure
-(vim.cmd
-  (vlua-format
-    (.. ":autocmd " ponder " * <buffer=42> ++once :call %s()")
-    print-answer))
-```
-
 ### user commands
 
 There isn't a more concise way to define user commands than using straight up strings. I don't see much benefit in passing individual arguments with s-expressions or lists: it's far too verbose.
@@ -353,23 +340,46 @@ I would suggest doing something like this:
 
 ### text objects
 
-When it comes to defining text objects, they can be considered fancy keymaps. Here's a couple of examples:
+When it comes to defining text objects, they can be considered fancy keymaps. Here're the definition of `inner line` and `around line`:
 
-- Inner line
 ```clojure
 (def-keymap :il [xo :silent]
   (string.format ":<c-u>normal! %s<cr>"
     "g_v^"))
 ```
-
-- Around line
 ```clojure
 (def-keymap :al [xo :silent]
   (vlua-format ":<c-u>call %s()<cr>"
     (fn [] (vim.cmd "normal! $v0"))))
 ```
 
+### text operators
 
+Text operators are the fanciest of keymaps. Here's a minimal example:
+
+```clojure
+(fn def-operator [k f]
+  (let [v-lua (vlua f)]
+    (def-keymap k [n :silent] (string.format ":set operatorfunc=%s<cr>g@" v-lua))
+    (def-keymap k [v :silent] (string.format ":<c-u>call %s(visualmode())<cr>" v-lua))
+    (def-keymap (.. k k) [n :silent] (string.format ":<c-u>call %s(v:count1)<cr>" v-lua))))
+
+(def-operator :q
+  (fn [x] (print x))
+```
+
+### complex autocmds
+
+It's debatable, but with `def-autocmd` and `def-autocmd-fn` I've made the decision in favour of syntactic sweetness. More often than not I see autocmds defined in place, with a concrete set of parameters.
+
+If you need to pass events to the definition or create complex autocmds, use `vlua`:
+
+```clojure
+(vim.cmd
+  (vlua-format
+    (.. ":autocmd " ponder " * <buffer=42> ++once :call %s()")
+    print-answer))
+```
 
 # thanks
 
