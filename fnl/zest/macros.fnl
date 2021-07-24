@@ -122,65 +122,65 @@
 
 ; textobject
 
-; TODO prep RHS like this wherever else i can
-(fn M.def-textobject [fs ts]
-  `(let [ZEST_RHS# (.. ":<c-u>norm! " ,ts "<cr>")]
-     (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
-     (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true})))
-
-(fn M.def-textobject-fn [fs ...]
-  (let [v (_vlua `(fn [] ,...) :textobject fs)]
-    `(let [ZEST_VLUA# ,v
-           ZEST_RHS# (string.format ":<c-u>call %s()<cr>" ZEST_VLUA#)]
-       (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
-       (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true}))))
+;; TODO prep RHS like this wherever else i can
+;(fn M.def-textobject [fs ts]
+;  `(let [ZEST_RHS# (.. ":<c-u>norm! " ,ts "<cr>")]
+;     (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
+;     (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true})))
+;
+;(fn M.def-textobject-fn [fs ...]
+;  (let [v (_vlua `(fn [] ,...) :textobject fs)]
+;    `(let [ZEST_VLUA# ,v
+;           ZEST_RHS# (string.format ":<c-u>call %s()<cr>" ZEST_VLUA#)]
+;       (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
+;       (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true}))))
 
 ; textoperator
 
-(fn M.def-operator [fs f]
-  (let [op `(fn [KIND#]
-              (let [REG# (vim.api.nvim_eval "@@")
-                    REG_TYPE# (vim.fn.getregtype "@@")
-                    SELECTION# vim.opt.selection
-                    CLIPBOARD# vim.opt.clipboard
-                    KIND# (if (tonumber KIND#) :count KIND#)
-                    C-V# (vim.api.nvim_replace_termcodes "<c-v>" true true true)]
-                (tset vim.opt :selection "inclusive")
-                (: vim.opt.clipboard :remove :unnamed)
-                (: vim.opt.clipboard :remove :unnamedplus)
-                (var INPUT_REG_TYPE# "") ;
-                (match KIND#
-                  :count (do (vim.api.nvim_command (.. "norm! V" vim.v.count1 "$y"))
-                           (set INPUT_REG_TYPE# "l"))  ; count + double
-                  :V     (do (vim.api.nvim_command "norm! gvy")
-                           (set INPUT_REG_TYPE# "l"))  ; v-line
-                  C-V#   (do (vim.api.nvim_command "norm! gvy")
-                           (set INPUT_REG_TYPE# "b"))  ; v-block
-                  :v     (do (vim.api.nvim_command "norm! gvy")
-                           (set INPUT_REG_TYPE# "c"))  ; v-char
-                  :line  (do (vim.api.nvim_command "norm! `[V`]y")
-                           (set INPUT_REG_TYPE# "l"))  ; m-line
-                  :block (do (vim.api.nvim_command "norm! `[<c-v>`]y")
-                           (set INPUT_REG_TYPE# "b"))  ; m-block
-                  :char  (do (vim.api.nvim_command "norm! `[v`]y")
-                           (set INPUT_REG_TYPE# "c"))  ; m-char
-                  )
-                (let [INPUT# (vim.api.nvim_eval "@@")
-                      OUTPUT# (,f INPUT# KIND#)]
-                  (when OUTPUT#
-                    (vim.fn.setreg "@" OUTPUT# INPUT_REG_TYPE#)
-                    (vim.api.nvim_command "norm! gvp"))
-                  (vim.fn.setreg "@@" REG# REG_TYPE#)
-                  (tset vim.opt :selection SELECTION#)
-                  (tset vim.opt :clipboard CLIPBOARD#))))]
-    `(let [VLUA# ,(_vlua op :operator fs)
-           RHS_TEXTOBJECT# (.. ":set operatorfunc=" VLUA# "<cr>g@")
-           RHS_VISUAL# (.. ":<c-u>call " VLUA# "(visualmode())<cr>")
-           LHS_DOUBLE# (.. ,fs (string.sub ,fs -1))
-           RHS_DOUBLE# (.. ":<c-u>call " VLUA# "(v:count1)<cr>")]
-       (vim.api.nvim_set_keymap "n" ,fs RHS_TEXTOBJECT# {:noremap true :silent true})
-       (vim.api.nvim_set_keymap "n" LHS_DOUBLE# RHS_DOUBLE# {:noremap true :silent true})
-       (vim.api.nvim_set_keymap "v" ,fs RHS_VISUAL# {:noremap true :silent true}))))
+;(fn M.def-operator [fs f]
+;  (let [op `(fn [KIND#]
+;              (let [REG# (vim.api.nvim_eval "@@")
+;                    REG_TYPE# (vim.fn.getregtype "@@")
+;                    SELECTION# vim.opt.selection
+;                    CLIPBOARD# vim.opt.clipboard
+;                    KIND# (if (tonumber KIND#) :count KIND#)
+;                    C-V# (vim.api.nvim_replace_termcodes "<c-v>" true true true)]
+;                (tset vim.opt :selection "inclusive")
+;                (: vim.opt.clipboard :remove :unnamed)
+;                (: vim.opt.clipboard :remove :unnamedplus)
+;                (var INPUT_REG_TYPE# "") ;
+;                (match KIND#
+;                  :count (do (vim.api.nvim_command (.. "norm! V" vim.v.count1 "$y"))
+;                           (set INPUT_REG_TYPE# "l"))  ; count + double
+;                  :V     (do (vim.api.nvim_command "norm! gvy")
+;                           (set INPUT_REG_TYPE# "l"))  ; v-line
+;                  C-V#   (do (vim.api.nvim_command "norm! gvy")
+;                           (set INPUT_REG_TYPE# "b"))  ; v-block
+;                  :v     (do (vim.api.nvim_command "norm! gvy")
+;                           (set INPUT_REG_TYPE# "c"))  ; v-char
+;                  :line  (do (vim.api.nvim_command "norm! `[V`]y")
+;                           (set INPUT_REG_TYPE# "l"))  ; m-line
+;                  :block (do (vim.api.nvim_command "norm! `[<c-v>`]y")
+;                           (set INPUT_REG_TYPE# "b"))  ; m-block
+;                  :char  (do (vim.api.nvim_command "norm! `[v`]y")
+;                           (set INPUT_REG_TYPE# "c"))  ; m-char
+;                  )
+;                (let [INPUT# (vim.api.nvim_eval "@@")
+;                      OUTPUT# (,f INPUT# KIND#)]
+;                  (when OUTPUT#
+;                    (vim.fn.setreg "@" OUTPUT# INPUT_REG_TYPE#)
+;                    (vim.api.nvim_command "norm! gvp"))
+;                  (vim.fn.setreg "@@" REG# REG_TYPE#)
+;                  (tset vim.opt :selection SELECTION#)
+;                  (tset vim.opt :clipboard CLIPBOARD#))))]
+;    `(let [VLUA# ,(_vlua op :operator fs)
+;           RHS_TEXTOBJECT# (.. ":set operatorfunc=" VLUA# "<cr>g@")
+;           RHS_VISUAL# (.. ":<c-u>call " VLUA# "(visualmode())<cr>")
+;           LHS_DOUBLE# (.. ,fs (string.sub ,fs -1))
+;           RHS_DOUBLE# (.. ":<c-u>call " VLUA# "(v:count1)<cr>")]
+;       (vim.api.nvim_set_keymap "n" ,fs RHS_TEXTOBJECT# {:noremap true :silent true})
+;       (vim.api.nvim_set_keymap "n" LHS_DOUBLE# RHS_DOUBLE# {:noremap true :silent true})
+;       (vim.api.nvim_set_keymap "v" ,fs RHS_VISUAL# {:noremap true :silent true}))))
 
 ; setoption bakery
 

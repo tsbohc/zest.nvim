@@ -300,48 +300,6 @@ do
 end
 ```
 
-## textobjects
-
-### def-textobject
-
-- Define a custom text object as a normal mode string
-
-```clojure
-(def-textobject :il "g_v^")
-```
-```lua
-do
-  local ZEST_RHS_0_ = (":<c-u>norm! " .. "g_v^" .. "<cr>")
-  vim.api.nvim_set_keymap("x", "il", ZEST_RHS_0_, {noremap = true, silent = true})
-  vim.api.nvim_set_keymap("o", "il", ZEST_RHS_0_, {noremap = true, silent = true})
-end
-```
-
-### def-textobject-fn
-
-- Define a custom text object as a function
-
-```clojure
-(def-textobject-fn :al
-  (vim.cmd "norm! $v0"))
-```
-```lua
-do
-  local ZEST_VLUA_0_
-  do
-    local ZEST_ID_0_ = "_97_108_"
-    local function _0_()
-      return vim.cmd("norm! $v0")
-    end
-    _G._zest["textobject"][ZEST_ID_0_] = _0_
-    ZEST_VLUA_0_ = ("v:lua._zest.textobject." .. ZEST_ID_0_)
-  end
-  local ZEST_RHS_0_ = string.format(":<c-u>call %s()<cr>", ZEST_VLUA_0_)
-  vim.api.nvim_set_keymap("x", "al", ZEST_RHS_0_, {noremap = true, silent = true})
-  vim.api.nvim_set_keymap("o", "al", ZEST_RHS_0_, {noremap = true, silent = true})
-end
-```
-
 ## notes
 
 ### the tale of two macros
@@ -379,19 +337,39 @@ If you need to pass events to the definition or create complex autocmds, use `vl
 
 There isn't a more concise way to define user commands than using straight up strings. I don't see much benefit in passing individual arguments with s-expressions or lists: it's far too verbose.
 
-For now, I would suggest doing something like this:
+I would suggest doing something like this:
 
 ```clojure
-(fn def-command [s fn]
+(fn def-command [s f]
   (vim.cmd
-    (if fn
-      (vlua-format (.. ":command " s) fn)
+    (if f
+      (vlua-format (.. ":command " s) f)
       (.. ":command " s))))
 
 (def-command
   "-nargs=* Mycmd :call %s(<f-args>)"
   Mycmd)
 ```
+
+### text objects
+
+When it comes to defining text objects, they can be considered fancy keymaps. Here's a couple of examples:
+
+- Inner line
+```clojure
+(def-keymap :il [xo :silent]
+  (string.format ":<c-u>normal! %s<cr>"
+    "g_v^"))
+```
+
+- Around line
+```clojure
+(def-keymap :al [xo :silent]
+  (vlua-format ":<c-u>call %s()<cr>"
+    (fn [] (vim.cmd "normal! $v0"))))
+```
+
+
 
 # thanks
 

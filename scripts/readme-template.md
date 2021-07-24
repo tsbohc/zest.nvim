@@ -205,30 +205,6 @@ To disable `noremap`, include `:remap` after the modes.
 {{lua:def-augroup-dirty1}}
 ```
 
-## textobjects
-
-### def-textobject
-
-- Define a custom text object as a normal mode string
-
-```clojure
-{{fnl:def-textobject1}}
-```
-```lua
-{{lua:def-textobject1}}
-```
-
-### def-textobject-fn
-
-- Define a custom text object as a function
-
-```clojure
-{{fnl:def-textobject-fn1}}
-```
-```lua
-{{lua:def-textobject-fn1}}
-```
-
 ## notes
 
 ### the tale of two macros
@@ -266,19 +242,39 @@ If you need to pass events to the definition or create complex autocmds, use `vl
 
 There isn't a more concise way to define user commands than using straight up strings. I don't see much benefit in passing individual arguments with s-expressions or lists: it's far too verbose.
 
-For now, I would suggest doing something like this:
+I would suggest doing something like this:
 
 ```clojure
-(fn def-command [s fn]
+(fn def-command [s f]
   (vim.cmd
-    (if fn
-      (vlua-format (.. ":command " s) fn)
+    (if f
+      (vlua-format (.. ":command " s) f)
       (.. ":command " s))))
 
 (def-command
   "-nargs=* Mycmd :call %s(<f-args>)"
   Mycmd)
 ```
+
+### text objects
+
+When it comes to defining text objects, they can be considered fancy keymaps. Here's a couple of examples:
+
+- Inner line
+```clojure
+(def-keymap :il [xo :silent]
+  (string.format ":<c-u>normal! %s<cr>"
+    "g_v^"))
+```
+
+- Around line
+```clojure
+(def-keymap :al [xo :silent]
+  (vlua-format ":<c-u>call %s()<cr>"
+    (fn [] (vim.cmd "normal! $v0"))))
+```
+
+
 
 # thanks
 
