@@ -77,7 +77,7 @@
 
 (fn M.def-keymap-fn [fs args ...]
   (let [(modes opts) (_keymap-options args)
-        v (_vlua `(fn [] ,...) :keymap fs)]
+        v (_vlua `(fn [] ,...) :keymap (.. fs modes))]
     `(let [ZEST_VLUA# ,v
            ZEST_RHS# (string.format ,(if opts.expr "%s()" ":call %s()<cr>") ZEST_VLUA#)]
        (each [ZEST_M# (string.gmatch ,modes ".")]
