@@ -122,7 +122,6 @@
 
 ; textobject
 
-;; TODO prep RHS like this wherever else i can
 ;(fn M.def-textobject [fs ts]
 ;  `(let [ZEST_RHS# (.. ":<c-u>norm! " ,ts "<cr>")]
 ;     (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})

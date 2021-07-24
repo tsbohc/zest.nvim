@@ -336,7 +336,7 @@ I would suggest doing something like this:
 
 ### text objects
 
-When it comes to defining text objects, they can be considered fancy keymaps. Here're the definition of `inner line` and `around line`:
+When it comes to defining text objects, they can be considered fancy keymaps. Here're the definitions of `inner line` and `around line`:
 
 ```clojure
 (def-keymap :il [xo :silent]
