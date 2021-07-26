@@ -21,7 +21,7 @@ local function new_xt(kind)
   return setmetatable({["#kind"] = kind}, {__newindex = _0_})
 end
 local function config(xt)
-  local conf = {["disable-compiler"] = false, ["verbose-compiler"] = true, source = vim.fn.resolve((vim.fn.stdpath("config") .. "/fnl")), target = vim.fn.resolve((vim.fn.stdpath("config") .. "/lua"))}
+  local conf = {["disable-compiler"] = false, ["verbose-compiler"] = true}
   if xt then
     for k, v in pairs(xt) do
       conf[k] = v

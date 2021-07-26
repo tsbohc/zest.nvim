@@ -12,10 +12,10 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 
 ### features
 
-- Virtually no startup penalty, <0.1ms
-- Almost everything is done at compile time using macros
-- Lazy-loads the fennel compiler on `BufWritePost`
-- Automatically recompiles `fnl/` to `lua/`
+- Syntactically sweet macros inspired by viml
+- Macros that seamlessly integrate lua functions into viml
+- Almost everything is done at compile time
+- Can be configured to recompile the config on `BufWritePost`
 
 <b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me in an issue or at @tsbohc on the [conjure discord](conjure.fun/discord).
 
@@ -26,24 +26,36 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 (use :tsbohc/zest.nvim)
 ```
 - Run `zest.setup` to initialise `_G._zest` before using any of the macros
+
 ```clojure
 (let [zest (require :zest)]
-  (zest.setup
-    {:source (vim.fn.resolve (.. (vim.fn.stdpath :config) "/fnl"))
-     :target (vim.fn.resolve (.. (vim.fn.stdpath :config) "/lua"))
-     :verbose-compiler true
-     :disable-compiler false}))
+  (zest.setup))
 ```
 
-- Import the macros you wish to use at the top of a file, aliasing them as you like
+- Import the macros you wish to use in the current file, aliasing them as you like
 ```clojure
 (import-macros
   {:opt-prepend opt^} :zest.macros)
 ```
 
-By default, zest will mirror the `stdpath/fnl` directory tree (or one that is symlinked to that path) to `stdpath/lua`. When a relevant file is saved, zest will display a message and recompile it.
+Without aniseed, zest can be configured to mirror the `source` directory tree to `target`. When a relevant file is saved, zest will display a message and recompile it.
 
-There will be no prompt before overriding a target lua file. Be careful!
+Unless configured, zest will not initialise its compiler.
+
+<details>
+  <summary>Show an example of standalone configuration</summary>
+
+  <br>
+
+  ```clojure
+  (let [zest (require :zest)
+        h vim.env.HOME]
+    (zest.setup
+      {:target (.. h "/.garden/etc/nvim.d/lua")
+       :source (.. h "/.garden/etc/nvim.d/fnl")
+       :verbose-compiler true
+       :disable-compiler false}))
+  ```
 
 </details>
 

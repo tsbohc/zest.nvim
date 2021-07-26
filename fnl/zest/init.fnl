@@ -21,9 +21,7 @@
        (rawset xt k v))}))
 
 (fn config [xt]
-  (let [conf {:source (vim.fn.resolve (.. (vim.fn.stdpath :config) "/fnl"))
-              :target (vim.fn.resolve (.. (vim.fn.stdpath :config) "/lua"))
-              :verbose-compiler true
+  (let [conf {:verbose-compiler true
               :disable-compiler false}]
     (when xt
       (each [k v (pairs xt)]
@@ -31,7 +29,6 @@
     conf))
 
 (fn M.setup [xt]
-  ;(print (.. "config:\n" (vim.inspect config)))
   (set _G._zest
        {:keymap {}
         :autocmd {:# 1}
