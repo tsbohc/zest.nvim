@@ -22,6 +22,8 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 
 ## usage
 
+#### with aniseed
+
 - Install with your favourite package manager
 ```clojure
 (use :tsbohc/zest.nvim)
@@ -39,7 +41,9 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
   {:opt-prepend opt^} :zest.macros)
 ```
 
-Without aniseed, zest can be configured to mirror the `source` directory tree to `target`. When a relevant file is saved, zest will display a message and recompile it.
+#### without aniseed
+
+When installed on its own, zest can be configured to mirror the `source` directory tree to `target`. When a relevant file is saved, zest will display a message and recompile it. 
 
 Unless configured, zest will not initialise its compiler.
 
