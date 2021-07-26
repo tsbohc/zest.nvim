@@ -9,7 +9,7 @@ done
 
 readme=$(<readme-template.md)
 
-for lua_path in $HOME/.config/nvim/demo/fnl/*.lua; do
+for lua_path in $HOME/.garden/etc/nvim.d/lua/demo/fnl/*.lua; do
   filename="$(basename "$lua_path")"
   key="${filename%.*}"
   fnl_path="$HOME/.garden/etc/nvim.d/fnl/demo/fnl/${filename//\.lua/\.fnl}"

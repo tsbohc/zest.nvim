@@ -186,7 +186,7 @@ To disable `noremap`, include `:remap` after the modes.
 do
   local ZEST_VLUA_0_
   do
-    local ZEST_ID_0_ = "_60_99_45_109_62_"
+    local ZEST_ID_0_ = "_60_99_45_109_62_110_"
     local function _0_()
       return print("hello from fennel!")
     end
@@ -210,7 +210,7 @@ end
 do
   local ZEST_VLUA_0_
   do
-    local ZEST_ID_0_ = "_107_"
+    local ZEST_ID_0_ = "_107_110_118_"
     local function _0_()
       if (vim.v.count > 0) then
         return "k"
@@ -252,11 +252,23 @@ end
 - Define an autocommand
 
 ```clojure
-(def-autocmd [BufNewFile BufRead] [:*.html :*.xml]
+(def-autocmd [:BufNewFile :BufRead] [:*.html :*.xml]
   "setlocal nowrap")
 ```
 ```lua
-vim.api.nvim_command(("au " .. "BufNewFile,BufRead" .. " " .. "*.html,*.xml" .. " " .. "setlocal nowrap"))
+local _0_
+if (type({"BufNewFile", "BufRead"}) == "string") then
+  _0_ = {"BufNewFile", "BufRead"}
+else
+  _0_ = table.concat({"BufNewFile", "BufRead"}, ",")
+end
+local _2_
+if (type({"*.html", "*.xml"}) == "string") then
+  _2_ = {"*.html", "*.xml"}
+else
+  _2_ = table.concat({"*.html", "*.xml"}, ",")
+end
+vim.api.nvim_command(("au " .. _0_ .. " " .. _2_ .. " " .. "setlocal nowrap"))
 ```
 
 ### def-autocmd-fn
@@ -265,7 +277,7 @@ vim.api.nvim_command(("au " .. "BufNewFile,BufRead" .. " " .. "*.html,*.xml" .. 
 
 ```clojure
 (def-augroup :restore-position
-  (def-autocmd-fn [BufReadPost] "*"
+  (def-autocmd-fn :BufReadPost "*"
     (when (and (> (vim.fn.line "'\"") 1)
                (<= (vim.fn.line "'\"") (vim.fn.line "$")))
       (vim.cmd "normal! g'\""))))
