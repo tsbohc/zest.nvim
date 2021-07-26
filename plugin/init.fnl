@@ -1,5 +1,6 @@
 ; return if aniseed is detected
 (when (or (. vim.g :aniseed#env)
+          (not _G._zest)
           _G._zest.config.disable-compiler)
   (lua "return"))
 

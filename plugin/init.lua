@@ -1,4 +1,4 @@
-if (vim.g["aniseed#env"] or _G._zest.config["disable-compiler"]) then
+if (vim.g["aniseed#env"] or not _G._zest or _G._zest.config["disable-compiler"]) then
   return
 end
 local cmd = vim.api.nvim_command
