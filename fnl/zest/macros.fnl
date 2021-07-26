@@ -102,12 +102,24 @@
 (fn M.def-augroup-dirty [name ...]
   (_create-augroup true name ...))
 
+(fn _table-string-passthrough [x]
+  (if (= (type x) :string)
+    `,x
+    `(if (= (type ,x) :string)
+       ,x
+       (table.concat ,x ","))))
+
 (fn _autocmd-options [events patterns]
-  (let [events (table.concat (xs-str events) ",")
-        patterns (if (= (type patterns) :string)
-                   patterns
-                   (table.concat (xs-str patterns) ","))]
+  (let [events (_table-string-passthrough events)
+        patterns (_table-string-passthrough patterns)]
     (values events patterns)))
+
+(fn M.test [x]
+  (if (= (type x) :string)
+    `,x
+    `(if (= (type ,x) :string)
+       (table.concat ,x ",")
+       ,x)))
 
 (fn M.def-autocmd [events patterns ts]
   (let [(events patterns) (_autocmd-options events patterns)]
