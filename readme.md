@@ -16,6 +16,7 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 - Macros that seamlessly integrate lua functions into viml
 - Almost everything is done at compile time
 - Can be configured to recompile the config on `BufWritePost`
+- No startup penalty
 
 <b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me in an issue or at @tsbohc on the [conjure discord](conjure.fun/discord).
 
