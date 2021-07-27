@@ -74,14 +74,15 @@ The examples are refreshed with every change to zest and are always up to date.
 - Store a function and return its `v:lua`, excluding the parentheses
 
 ```clojure
-(local v (vlua my-fn))
+(local v (vlua my_fn))
 ```
 ```lua
 local v
 do
-  local ZEST_ID_0_ = ("_" .. _G._zest.v["#"])
-  _G._zest["v"][ZEST_ID_0_] = __fnl_global__my_2dfn
-  _G._zest["v"]["#"] = (_G._zest.v["#"] + 1)
+  local ZEST_N_0_ = _G._zest.v["#"]
+  local ZEST_ID_0_ = ("_" .. ZEST_N_0_)
+  _G._zest["v"][ZEST_ID_0_] = my_fn
+  _G._zest["v"]["#"] = (ZEST_N_0_ + 1)
   v = ("v:lua._zest.v." .. ZEST_ID_0_)
 end
 ```
@@ -99,12 +100,13 @@ end
 ```
 ```lua
 local function _0_(...)
-  local ZEST_ID_0_ = ("_" .. _G._zest.v["#"])
+  local ZEST_N_0_ = _G._zest.v["#"]
+  local ZEST_ID_0_ = ("_" .. ZEST_N_0_)
   local function _1_(...)
     return print(...)
   end
   _G._zest["v"][ZEST_ID_0_] = _1_
-  _G._zest["v"]["#"] = (_G._zest.v["#"] + 1)
+  _G._zest["v"]["#"] = (ZEST_N_0_ + 1)
   return ("v:lua._zest.v." .. ZEST_ID_0_)
 end
 vim.api.nvim_command(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
@@ -243,10 +245,8 @@ end
 ```
 ```lua
 do
-  vim.api.nvim_command(("augroup " .. "my-augroup"))
+  vim.api.nvim_command("augroup my-augroup")
   vim.api.nvim_command("autocmd!")
-  do
-  end
   vim.api.nvim_command("augroup END")
 end
 ```
@@ -256,23 +256,11 @@ end
 - Define an autocommand
 
 ```clojure
-(def-autocmd [:BufNewFile :BufRead] [:*.html :*.xml]
+(def-autocmd [:BufNewFile my_event] [:*.html :*.xml]
   "setlocal nowrap")
 ```
 ```lua
-local _0_
-if (type({"BufNewFile", "BufRead"}) == "string") then
-  _0_ = {"BufNewFile", "BufRead"}
-else
-  _0_ = table.concat({"BufNewFile", "BufRead"}, ",")
-end
-local _2_
-if (type({"*.html", "*.xml"}) == "string") then
-  _2_ = {"*.html", "*.xml"}
-else
-  _2_ = table.concat({"*.html", "*.xml"}, ",")
-end
-vim.api.nvim_command(("au " .. _0_ .. " " .. _2_ .. " " .. "setlocal nowrap"))
+vim.api.nvim_command(("au " .. table.concat({"BufNewFile", my_event}, ",") .. " *.html,*.xml setlocal nowrap"))
 ```
 
 ### def-autocmd-fn
@@ -288,23 +276,23 @@ vim.api.nvim_command(("au " .. _0_ .. " " .. _2_ .. " " .. "setlocal nowrap"))
 ```
 ```lua
 do
-  vim.api.nvim_command(("augroup " .. "restore-position"))
+  vim.api.nvim_command("augroup restore-position")
   vim.api.nvim_command("autocmd!")
   do
-    local ZEST_VLUA_0_
+    local _0_
     do
-      local ZEST_ID_0_ = ("_" .. _G._zest.autocmd["#"])
-      local function _0_()
+      local ZEST_N_0_ = _G._zest.autocmd["#"]
+      local ZEST_ID_0_ = ("_" .. ZEST_N_0_)
+      local function _1_()
         if ((vim.fn.line("'\"") > 1) and (vim.fn.line("'\"") <= vim.fn.line("$"))) then
           return vim.cmd("normal! g'\"")
         end
       end
-      _G._zest["autocmd"][ZEST_ID_0_] = _0_
-      _G._zest["autocmd"]["#"] = (_G._zest.autocmd["#"] + 1)
-      ZEST_VLUA_0_ = ("v:lua._zest.autocmd." .. ZEST_ID_0_)
+      _G._zest["autocmd"][ZEST_ID_0_] = _1_
+      _G._zest["autocmd"]["#"] = (ZEST_N_0_ + 1)
+      _0_ = ("v:lua._zest.autocmd." .. ZEST_ID_0_)
     end
-    local ZEST_RHS_0_ = string.format(":call %s()", ZEST_VLUA_0_)
-    vim.api.nvim_command(("au " .. "BufReadPost" .. " " .. "*" .. " " .. ZEST_RHS_0_))
+    vim.api.nvim_command(("au BufReadPost * " .. (":call " .. _0_ .. "()")))
   end
   vim.api.nvim_command("augroup END")
 end
@@ -319,9 +307,7 @@ end
 ```
 ```lua
 do
-  vim.api.nvim_command(("augroup " .. "my-dirty-augroup"))
-  do
-  end
+  vim.api.nvim_command("augroup my-dirty-augroup")
   vim.api.nvim_command("augroup END")
 end
 ```
@@ -394,9 +380,7 @@ Text operators are the fanciest of keymaps. Here's a minimal example:
 
 ### complex autocmds
 
-It's debatable, but with `def-autocmd` and `def-autocmd-fn` I've made the decision in favour of syntactic sweetness. More often than not I see autocmds defined in place, with a concrete set of parameters.
-
-If you need to pass events to the definition or create complex autocmds, use `vlua`:
+If you need to create complex autocmds, use `vlua`:
 
 ```clojure
 (vim.cmd

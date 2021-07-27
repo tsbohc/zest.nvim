@@ -1,10 +1,3 @@
-(fn xs-str [xs]
-  "convert seq of symbols 'xs' to a seq of strings"
-  (let [r []]
-    (for [i 1 (# xs)]
-      (table.insert r `,(tostring (. xs i))))
-    r))
-
 ; internal
 
 (fn _encode [s]
@@ -15,15 +8,47 @@
     `(.. "_" (string.gsub ,s "."
                (fn [ZEST_C#] (string.format "%s_" (string.byte ZEST_C#)))))))
 
+(fn _smart-concat [xs d]
+  "concatenate only literal strings in seq 'xs'"
+  (let [d (or d "")
+        out []
+        f (require :zest.fennel)]
+    (if (= (type xs) :string)
+      ; simply pass literal strings through
+      (table.insert out xs)
+      (if (f.sym? xs)
+        ; decide what to do with variables at runtime
+        (table.insert out
+          `(if (= (type ,xs) :string)
+             ,xs
+             (table.concat ,xs ,d)))
+        ; do whatever we can with literal sequences
+        (do
+          (var last-string? false)
+          (each [_ v (ipairs xs)]
+            (let [string? (= (type v) :string)
+                  len (length out)]
+              (if (and last-string?
+                       string?)
+                (tset out len (.. (. out len) d v))
+                (table.insert out v))
+              (set last-string? string?))))))
+    (if (= (length out) 1)
+      (unpack out)
+      (if (= d "")
+        `(.. ,(unpack out))
+        `(table.concat ,out ,d)))))
+
 (fn _vlua [f kind id]
   "store function 'f' into _G._zest and return its v:lua"
   (if id
     `(let [ZEST_ID# ,(_encode id)]
        (tset _G._zest ,kind ZEST_ID# ,f)
        (.. ,(.. "v:lua._zest." kind ".") ZEST_ID#))
-    `(let [ZEST_ID# (.. "_" (. _G._zest ,kind :#))]
+    `(let [ZEST_N# (. _G._zest ,kind :#)
+           ZEST_ID# (.. "_" ZEST_N#)]
        (tset _G._zest ,kind ZEST_ID# ,f)
-       (tset _G._zest ,kind :# (+ (. _G._zest ,kind :#) 1))
+       (tset _G._zest ,kind :# (+ ZEST_N# 1))
        (.. ,(.. "v:lua._zest." kind ".") ZEST_ID#))))
 
 (fn _vlua-format [s f kind id]
@@ -31,6 +56,9 @@
   `(string.format ,s ,(_vlua f kind id)))
 
 (local M {})
+
+(fn M.concat [xs d]
+  (_smart-concat xs d))
 
 ; vlua
 
@@ -42,17 +70,12 @@
   "a user macro for _vlua-format"
   `,(_vlua-format s f :v))
 
-; TODO redundant?
-;(fn M.def-vlua-fn [s ...]
-;  (let [f `(fn ,...)]
-;    `,(_vlua-format s f :v)))
-
 ; keymaps
 
 (fn _keymap-options [args]
   "convert seq of options 'args' to 'modes' string and keymap 'opts'"
   (let [modes (tostring (table.remove args 1))
-        opts-xs (xs-str args)
+        opts-xs args
         opts {:noremap true}]
     (each [_ o (ipairs opts-xs)]
       (if (= o :remap)
@@ -87,14 +110,16 @@
 
 (fn _create-augroup [dirty? name ...]
   "define a new augroup, with or without autocmd!"
-  (let [out []]
+  (let [out []
+        body (if ...  `[(do ,...)] `[])
+        opening (_smart-concat ["augroup" name] " ")]
     (when (not dirty?)
       (table.insert out `(vim.api.nvim_command "autocmd!")))
     `(do
-       (vim.api.nvim_command (.. "augroup " ,name))
+       (vim.api.nvim_command ,opening)
        ,(unpack out)
-       (do ,...)
-       (vim.api.nvim_command (.. "augroup END")))))
+       ,(unpack body)
+       (vim.api.nvim_command "augroup END"))))
 
 (fn M.def-augroup [name ...]
   (_create-augroup false name ...))
@@ -102,96 +127,18 @@
 (fn M.def-augroup-dirty [name ...]
   (_create-augroup true name ...))
 
-(fn _table-string-passthrough [x]
-  (if (= (type x) :string)
-    `,x
-    `(if (= (type ,x) :string)
-       ,x
-       (table.concat ,x ","))))
-
-(fn _autocmd-options [events patterns]
-  (let [events (_table-string-passthrough events)
-        patterns (_table-string-passthrough patterns)]
-    (values events patterns)))
-
-(fn M.test [x]
-  (if (= (type x) :string)
-    `,x
-    `(if (= (type ,x) :string)
-       (table.concat ,x ",")
-       ,x)))
-
 (fn M.def-autocmd [events patterns ts]
-  (let [(events patterns) (_autocmd-options events patterns)]
-    `(vim.api.nvim_command (.. "au " ,events " " ,patterns " " ,ts))))
+  (let [events (_smart-concat events ",")
+        patterns (_smart-concat patterns ",")
+        command (_smart-concat ["au " events " " patterns " " ts])]
+    `(vim.api.nvim_command ,command)))
 
 (fn M.def-autocmd-fn [events patterns ...]
-  (let [(events patterns) (_autocmd-options events patterns)
-        v (_vlua `(fn [] ,...) :autocmd)]
-    `(let [ZEST_VLUA# ,v
-           ZEST_RHS# (string.format ":call %s()" ZEST_VLUA#)]
-       (vim.api.nvim_command (.. "au " ,events " " ,patterns " " ZEST_RHS#)))))
-
-; textobject
-
-;(fn M.def-textobject [fs ts]
-;  `(let [ZEST_RHS# (.. ":<c-u>norm! " ,ts "<cr>")]
-;     (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
-;     (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true})))
-;
-;(fn M.def-textobject-fn [fs ...]
-;  (let [v (_vlua `(fn [] ,...) :textobject fs)]
-;    `(let [ZEST_VLUA# ,v
-;           ZEST_RHS# (string.format ":<c-u>call %s()<cr>" ZEST_VLUA#)]
-;       (vim.api.nvim_set_keymap "x" ,fs ZEST_RHS# {:noremap true :silent true})
-;       (vim.api.nvim_set_keymap "o" ,fs ZEST_RHS# {:noremap true :silent true}))))
-
-; textoperator
-
-;(fn M.def-operator [fs f]
-;  (let [op `(fn [KIND#]
-;              (let [REG# (vim.api.nvim_eval "@@")
-;                    REG_TYPE# (vim.fn.getregtype "@@")
-;                    SELECTION# vim.opt.selection
-;                    CLIPBOARD# vim.opt.clipboard
-;                    KIND# (if (tonumber KIND#) :count KIND#)
-;                    C-V# (vim.api.nvim_replace_termcodes "<c-v>" true true true)]
-;                (tset vim.opt :selection "inclusive")
-;                (: vim.opt.clipboard :remove :unnamed)
-;                (: vim.opt.clipboard :remove :unnamedplus)
-;                (var INPUT_REG_TYPE# "") ;
-;                (match KIND#
-;                  :count (do (vim.api.nvim_command (.. "norm! V" vim.v.count1 "$y"))
-;                           (set INPUT_REG_TYPE# "l"))  ; count + double
-;                  :V     (do (vim.api.nvim_command "norm! gvy")
-;                           (set INPUT_REG_TYPE# "l"))  ; v-line
-;                  C-V#   (do (vim.api.nvim_command "norm! gvy")
-;                           (set INPUT_REG_TYPE# "b"))  ; v-block
-;                  :v     (do (vim.api.nvim_command "norm! gvy")
-;                           (set INPUT_REG_TYPE# "c"))  ; v-char
-;                  :line  (do (vim.api.nvim_command "norm! `[V`]y")
-;                           (set INPUT_REG_TYPE# "l"))  ; m-line
-;                  :block (do (vim.api.nvim_command "norm! `[<c-v>`]y")
-;                           (set INPUT_REG_TYPE# "b"))  ; m-block
-;                  :char  (do (vim.api.nvim_command "norm! `[v`]y")
-;                           (set INPUT_REG_TYPE# "c"))  ; m-char
-;                  )
-;                (let [INPUT# (vim.api.nvim_eval "@@")
-;                      OUTPUT# (,f INPUT# KIND#)]
-;                  (when OUTPUT#
-;                    (vim.fn.setreg "@" OUTPUT# INPUT_REG_TYPE#)
-;                    (vim.api.nvim_command "norm! gvp"))
-;                  (vim.fn.setreg "@@" REG# REG_TYPE#)
-;                  (tset vim.opt :selection SELECTION#)
-;                  (tset vim.opt :clipboard CLIPBOARD#))))]
-;    `(let [VLUA# ,(_vlua op :operator fs)
-;           RHS_TEXTOBJECT# (.. ":set operatorfunc=" VLUA# "<cr>g@")
-;           RHS_VISUAL# (.. ":<c-u>call " VLUA# "(visualmode())<cr>")
-;           LHS_DOUBLE# (.. ,fs (string.sub ,fs -1))
-;           RHS_DOUBLE# (.. ":<c-u>call " VLUA# "(v:count1)<cr>")]
-;       (vim.api.nvim_set_keymap "n" ,fs RHS_TEXTOBJECT# {:noremap true :silent true})
-;       (vim.api.nvim_set_keymap "n" LHS_DOUBLE# RHS_DOUBLE# {:noremap true :silent true})
-;       (vim.api.nvim_set_keymap "v" ,fs RHS_VISUAL# {:noremap true :silent true}))))
+  (let [events (_smart-concat events ",")
+        patterns (_smart-concat patterns ",")
+        v (_smart-concat [":call " (_vlua `(fn [] ,...) :autocmd) "()"])
+        command (_smart-concat ["au " events " " patterns " " v])]
+    `(vim.api.nvim_command ,command)))
 
 ; setoption bakery
 
@@ -222,7 +169,7 @@
           (fn [key val]
             (_opt-act scope key val act)))))
 
-;(fn M.def-leader [])
+; TODO
 
 ; packer
 
@@ -239,24 +186,6 @@
 (fn M.let-g [k v]
   "set 'k' to 'v' on vim.g table"
   `(tset vim.g ,(tostring k) ,v))
-
-; config
-
-(fn M.zest-config [xt]
-  `(let [ZEST_CONF# ,xt
-         ZEST_DEFAULT_CONF#
-         {:source (vim.fn.resolve (.. (vim.fn.stdpath :config) "/fnl"))
-          :target (vim.fn.resolve (.. (vim.fn.stdpath :config) "/lua"))
-          :verbose-compiler true
-          :disable-compiler false}]
-     (when ZEST_CONF#
-       (each [ZEST_K# ZEST_V# (pairs ZEST_CONF#)]
-         (tset ZEST_DEFAULT_CONF# ZEST_K# ZEST_V#)))
-     (tset _G :_zest
-          {:keymap {}
-           :autocmd {:# 1}
-           :v {:# 1}
-           :config ZEST_DEFAULT_CONF#})))
 
 ; highlight?
 
