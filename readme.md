@@ -149,8 +149,9 @@ do end (vim.opt_local.completeopt):append({"menuone", "noselect"})
 ```
 ```lua
 do
-  vim.api.nvim_set_keymap("n", "H", "0", {noremap = true})
-  vim.api.nvim_set_keymap("v", "H", "0", {noremap = true})
+  local ZEST_OPTS_0_ = {noremap = true}
+  vim.api.nvim_set_keymap("n", "H", "0", ZEST_OPTS_0_)
+  vim.api.nvim_set_keymap("v", "H", "0", ZEST_OPTS_0_)
 end
 ```
 
@@ -174,8 +175,11 @@ end
    :<ScrollWheelDown> "<c-e>"})
 ```
 ```lua
-vim.api.nvim_set_keymap("n", "<ScrollWheelUp>", "<c-y>", {noremap = true})
-vim.api.nvim_set_keymap("n", "<ScrollWheelDown>", "<c-e>", {noremap = true})
+do
+  local ZEST_OPTS_0_ = {noremap = true}
+  vim.api.nvim_set_keymap("n", "<ScrollWheelUp>", "<c-y>", ZEST_OPTS_0_)
+  vim.api.nvim_set_keymap("n", "<ScrollWheelDown>", "<c-e>", ZEST_OPTS_0_)
+end
 ```
 
 To disable `noremap`, include `:remap` after the modes.
@@ -199,10 +203,8 @@ do
     _G._zest["keymap"][ZEST_ID_0_] = _0_
     ZEST_VLUA_0_ = ("v:lua._zest.keymap." .. ZEST_ID_0_)
   end
-  local ZEST_RHS_0_ = string.format(":call %s()<cr>", ZEST_VLUA_0_)
-  for ZEST_M_0_ in string.gmatch("n", ".") do
-    vim.api.nvim_set_keymap(ZEST_M_0_, "<c-m>", ZEST_RHS_0_, {noremap = true})
-  end
+  local ZEST_RHS_0_ = (":call " .. ZEST_VLUA_0_ .. "()<cr>")
+  vim.api.nvim_set_keymap("n", "<c-m>", ZEST_RHS_0_, {noremap = true})
 end
 ```
 
@@ -227,10 +229,10 @@ do
     _G._zest["keymap"][ZEST_ID_0_] = _0_
     ZEST_VLUA_0_ = ("v:lua._zest.keymap." .. ZEST_ID_0_)
   end
-  local ZEST_RHS_0_ = string.format("%s()", ZEST_VLUA_0_)
-  for ZEST_M_0_ in string.gmatch("nv", ".") do
-    vim.api.nvim_set_keymap(ZEST_M_0_, "k", ZEST_RHS_0_, {expr = true, noremap = true})
-  end
+  local ZEST_RHS_0_ = (ZEST_VLUA_0_ .. "()")
+  local ZEST_OPTS_0_ = {expr = true, noremap = true}
+  vim.api.nvim_set_keymap("n", "k", ZEST_RHS_0_, ZEST_OPTS_0_)
+  vim.api.nvim_set_keymap("v", "k", ZEST_RHS_0_, ZEST_OPTS_0_)
 end
 ```
 
@@ -279,20 +281,20 @@ do
   vim.api.nvim_command("augroup restore-position")
   vim.api.nvim_command("autocmd!")
   do
-    local _0_
+    local ZEST_VLUA_0_
     do
       local ZEST_N_0_ = _G._zest.autocmd["#"]
       local ZEST_ID_0_ = ("_" .. ZEST_N_0_)
-      local function _1_()
+      local function _0_()
         if ((vim.fn.line("'\"") > 1) and (vim.fn.line("'\"") <= vim.fn.line("$"))) then
           return vim.cmd("normal! g'\"")
         end
       end
-      _G._zest["autocmd"][ZEST_ID_0_] = _1_
+      _G._zest["autocmd"][ZEST_ID_0_] = _0_
       _G._zest["autocmd"]["#"] = (ZEST_N_0_ + 1)
-      _0_ = ("v:lua._zest.autocmd." .. ZEST_ID_0_)
+      ZEST_VLUA_0_ = ("v:lua._zest.autocmd." .. ZEST_ID_0_)
     end
-    vim.api.nvim_command(("au BufReadPost * " .. (":call " .. _0_ .. "()")))
+    vim.api.nvim_command(("autocmd BufReadPost * :call " .. ZEST_VLUA_0_ .. "()"))
   end
   vim.api.nvim_command("augroup END")
 end
@@ -380,7 +382,7 @@ Text operators are the fanciest of keymaps. Here's a minimal example:
 
 ### complex autocmds
 
-If you need to create complex autocmds, use `vlua`:
+If you want to create complex autocmds, use `vlua`:
 
 ```clojure
 (vim.cmd

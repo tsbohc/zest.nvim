@@ -142,13 +142,10 @@ The examples are refreshed with every change to zest and are always up to date.
 - Map pairs
 
 ```clojure
-(def-keymap [n]
-  {:<ScrollWheelUp>   "<c-y>"
-   :<ScrollWheelDown> "<c-e>"})
+{{fnl:def-keymap3}}
 ```
 ```lua
-vim.api.nvim_set_keymap("n", "<ScrollWheelUp>", "<c-y>", {noremap = true})
-vim.api.nvim_set_keymap("n", "<ScrollWheelDown>", "<c-e>", {noremap = true})
+{{lua:def-keymap3}}
 ```
 
 To disable `noremap`, include `:remap` after the modes.
@@ -287,9 +284,7 @@ Text operators are the fanciest of keymaps. Here's a minimal example:
 
 ### complex autocmds
 
-It's debatable, but with `def-autocmd` and `def-autocmd-fn` I've made the decision in favour of syntactic sweetness. More often than not I see autocmds defined in place, with a concrete set of parameters.
-
-If you need to pass events to the definition or create complex autocmds, use `vlua`:
+If you want to create complex autocmds, use `vlua`:
 
 ```clojure
 (vim.cmd
