@@ -92,7 +92,7 @@ end
 - A `string.format` wrapper for `vlua`
 
 ```clojure
-(vim.api.nvim_command
+(vim.cmd
   (vlua-format
     ":com -nargs=* Mycmd :call %s(<f-args>)"
     (fn [...]
@@ -109,7 +109,7 @@ local function _0_(...)
   _G._zest["v"]["#"] = (ZEST_N_0_ + 1)
   return ("v:lua._zest.v." .. ZEST_ID_0_)
 end
-vim.api.nvim_command(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
+vim.cmd(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
 ```
 
 ## options
@@ -398,4 +398,4 @@ If you want to create complex autocmds, use `vlua`:
 - [ElKowar](https://github.com/elkowar) for sharing his thoughts and his discord status
 - [Hauleth](https://old.reddit.com/user/Hauleth) for this [post](https://old.reddit.com/r/neovim/comments/n5dczu/when_vim_and_lisp_are_your_love/), which sparked my interest in fennel
 
-> zest embeds `fennel.lua`. I do not claim any ownership over this file
+> zest embeds `fennel.lua` -- I do not claim any ownership over this file
