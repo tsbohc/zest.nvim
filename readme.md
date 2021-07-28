@@ -8,14 +8,14 @@ a pinch of lisp for a tangy init.lua
 
 An opinionated macro library that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
 
-For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl). The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
+For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl/lua). The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
 
 ### features
 
 - Syntactically sweet macros inspired by viml
 - Macros that seamlessly integrate lua functions into viml
 - Almost everything is done at compile time
-- Can be configured to recompile the config on `BufWritePost`
+- Can be configured to recompile files on `BufWritePost`
 - No startup penalty
 
 <b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me in an issue or at @tsbohc on the [conjure discord](conjure.fun/discord).
@@ -247,9 +247,9 @@ end
 ```
 ```lua
 do
-  vim.api.nvim_command("augroup my-augroup")
-  vim.api.nvim_command("autocmd!")
-  vim.api.nvim_command("augroup END")
+  vim.cmd("augroup my-augroup")
+  vim.cmd("autocmd!")
+  vim.cmd("augroup END")
 end
 ```
 
@@ -262,7 +262,7 @@ end
   "setlocal nowrap")
 ```
 ```lua
-vim.api.nvim_command(("au " .. table.concat({"BufNewFile", my_event}, ",") .. " *.html,*.xml setlocal nowrap"))
+vim.cmd(("au " .. table.concat({"BufNewFile", my_event}, ",") .. " *.html,*.xml setlocal nowrap"))
 ```
 
 ### def-autocmd-fn
@@ -278,8 +278,8 @@ vim.api.nvim_command(("au " .. table.concat({"BufNewFile", my_event}, ",") .. " 
 ```
 ```lua
 do
-  vim.api.nvim_command("augroup restore-position")
-  vim.api.nvim_command("autocmd!")
+  vim.cmd("augroup restore-position")
+  vim.cmd("autocmd!")
   do
     local ZEST_VLUA_0_
     do
@@ -294,9 +294,9 @@ do
       _G._zest["autocmd"]["#"] = (ZEST_N_0_ + 1)
       ZEST_VLUA_0_ = ("v:lua._zest.autocmd." .. ZEST_ID_0_)
     end
-    vim.api.nvim_command(("autocmd BufReadPost * :call " .. ZEST_VLUA_0_ .. "()"))
+    vim.cmd(("autocmd BufReadPost * :call " .. ZEST_VLUA_0_ .. "()"))
   end
-  vim.api.nvim_command("augroup END")
+  vim.cmd("augroup END")
 end
 ```
 
@@ -309,8 +309,8 @@ end
 ```
 ```lua
 do
-  vim.api.nvim_command("augroup my-dirty-augroup")
-  vim.api.nvim_command("augroup END")
+  vim.cmd("augroup my-dirty-augroup")
+  vim.cmd("augroup END")
 end
 ```
 

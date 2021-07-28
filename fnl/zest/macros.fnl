@@ -1,12 +1,13 @@
 ; internal
 
+; I should bind vim.api.nvim_set_keymap locally when using it multiple times
+; hmmm, need to bench that
+
 (fn _encode [s]
   "convert characters of string 's' to byte_"
   (if (= (type s) :string)
-    `,(.. "_" (string.gsub s "."
-                (fn [ZEST_C#] (string.format "%s_" (string.byte ZEST_C#)))))
-    `(.. "_" (string.gsub ,s "."
-               (fn [ZEST_C#] (string.format "%s_" (string.byte ZEST_C#)))))))
+    `,(.. "_" (string.gsub s "." (fn [ZEST_C#] (.. (string.byte ZEST_C#) "_"))))
+    `(.. "_" (string.gsub ,s "." (fn [ZEST_C#] (.. (string.byte ZEST_C#) "_"))))))
 
 (fn _smart-concat [xs d]
   "concatenate only literal strings in seq 'xs'"
@@ -22,7 +23,7 @@
           `(if (= (type ,xs) :string)
              ,xs
              (table.concat ,xs ,d)))
-        ; do whatever we can with literal sequences
+        ; do whatever we can at compile time
         (do
           (var last-string? false)
           (each [_ v (ipairs xs)]
@@ -51,25 +52,13 @@
        (tset _G._zest ,kind :# (+ ZEST_N# 1))
        (.. ,(.. "v:lua._zest." kind ".") ZEST_ID#))))
 
-;(fn _vlua [f kind id]
-;  "store function 'f' into _G._zest and return its v:lua"
-;  (if id
-;    `(let [ZEST_ID# ,(_encode id)]
-;       (tset _G._zest ,kind ZEST_ID# ,f)
-;       (.. ,(.. "v:lua._zest." kind ".") ZEST_ID#))
-;    `(let [ZEST_N# (. _G._zest ,kind :#)
-;           ZEST_ID# (.. "_" ZEST_N#)]
-;       (tset _G._zest ,kind ZEST_ID# ,f)
-;       (tset _G._zest ,kind :# (+ ZEST_N# 1))
-;       (.. ,(.. "v:lua._zest." kind ".") ZEST_ID#))))
-
 (fn _vlua-format [s f kind id]
   "a string.format wrapper for _vlua"
   `(string.format ,s ,(_vlua f kind id)))
 
 (local M {})
 
-(fn M.concat [xs d]
+(fn M.___concat [xs d]
   (_smart-concat xs d))
 
 ; vlua
@@ -118,7 +107,7 @@
 
 (fn M.def-keymap-fn [fs args ...]
   (let [(modes opts) (_keymap-options args)
-        v (_vlua `(fn [] ,...) :keymap (_smart-concat [fs modes]))
+        vlua (_vlua `(fn [] ,...) :keymap (_smart-concat [fs modes]))
         rhs (if opts.expr
               `(.. ZEST_VLUA# "()")
               `(.. ":call " ZEST_VLUA# "()<cr>"))
@@ -127,11 +116,11 @@
       (do
         (each [m (string.gmatch modes ".")]
           (table.insert out `(vim.api.nvim_set_keymap ,m ,fs ZEST_RHS# ZEST_OPTS#)))
-        `(let [ZEST_VLUA# ,v
+        `(let [ZEST_VLUA# ,vlua
                ZEST_RHS# ,rhs
                ZEST_OPTS# ,opts]
            ,(unpack out)))
-      `(let [ZEST_VLUA# ,v
+      `(let [ZEST_VLUA# ,vlua
              ZEST_RHS# ,rhs]
          (vim.api.nvim_set_keymap ,modes ,fs ZEST_RHS# ,opts)))))
 
@@ -143,11 +132,11 @@
         body (if ...  `[(do ,...)] `[])
         opening (_smart-concat ["augroup" name] " ")]
     `(do
-       (vim.api.nvim_command ,opening)
+       (vim.cmd ,opening)
        ,(when (not dirty?)
-          `(vim.api.nvim_command "autocmd!"))
+          `(vim.cmd "autocmd!"))
        ,(unpack body)
-       (vim.api.nvim_command "augroup END"))))
+       (vim.cmd "augroup END"))))
 
 (fn M.def-augroup [name ...]
   (_create-augroup false name ...))
@@ -159,15 +148,15 @@
   (let [events (_smart-concat events ",")
         patterns (_smart-concat patterns ",")
         command (_smart-concat ["au " events " " patterns " " ts])]
-    `(vim.api.nvim_command ,command)))
+    `(vim.cmd ,command)))
 
 (fn M.def-autocmd-fn [events patterns ...]
   (let [events (_smart-concat events ",")
         patterns (_smart-concat patterns ",")
-        v (_vlua `(fn [] ,...) :autocmd)
+        vlua (_vlua `(fn [] ,...) :autocmd)
         command (_smart-concat ["autocmd " events " " patterns " :call " `ZEST_VLUA# "()"])]
-    `(let [ZEST_VLUA# ,v]
-       (vim.api.nvim_command ,command))))
+    `(let [ZEST_VLUA# ,vlua]
+       (vim.cmd ,command))))
 
 ; setoption bakery
 
