@@ -3,13 +3,15 @@
 ; I should bind vim.api.nvim_set_keymap locally when using it multiple times
 ; hmmm, need to bench that
 
+(local M {})
+
 (fn _encode [s]
   "convert characters of string 's' to byte_"
   (if (= (type s) :string)
     `,(.. "_" (string.gsub s "." (fn [ZEST_C#] (.. (string.byte ZEST_C#) "_"))))
     `(.. "_" (string.gsub ,s "." (fn [ZEST_C#] (.. (string.byte ZEST_C#) "_"))))))
 
-(fn _smart-concat [xs d]
+(fn M.smart-concat [xs d]
   "concatenate only literal strings in seq 'xs'"
   (let [d (or d "")
         out []
@@ -55,11 +57,6 @@
 (fn _vlua-format [s f kind id]
   "a string.format wrapper for _vlua"
   `(string.format ,s ,(_vlua f kind id)))
-
-(local M {})
-
-(fn M.___concat [xs d]
-  (_smart-concat xs d))
 
 ; vlua
 
@@ -107,7 +104,7 @@
 
 (fn M.def-keymap-fn [fs args ...]
   (let [(modes opts) (_keymap-options args)
-        vlua (_vlua `(fn [] ,...) :keymap (_smart-concat [fs modes]))
+        vlua (_vlua `(fn [] ,...) :keymap (M.smart-concat [fs modes]))
         rhs (if opts.expr
               `(.. ZEST_VLUA# "()")
               `(.. ":call " ZEST_VLUA# "()<cr>"))
@@ -130,7 +127,7 @@
   "define a new augroup, with or without autocmd!"
   (let [out []
         body (if ...  `[(do ,...)] `[])
-        opening (_smart-concat ["augroup" name] " ")]
+        opening (M.smart-concat ["augroup" name] " ")]
     `(do
        (vim.cmd ,opening)
        ,(when (not dirty?)
@@ -145,16 +142,16 @@
   (_create-augroup true name ...))
 
 (fn M.def-autocmd [events patterns ts]
-  (let [events (_smart-concat events ",")
-        patterns (_smart-concat patterns ",")
-        command (_smart-concat ["au " events " " patterns " " ts])]
+  (let [events (M.smart-concat events ",")
+        patterns (M.smart-concat patterns ",")
+        command (M.smart-concat ["au " events " " patterns " " ts])]
     `(vim.cmd ,command)))
 
 (fn M.def-autocmd-fn [events patterns ...]
-  (let [events (_smart-concat events ",")
-        patterns (_smart-concat patterns ",")
+  (let [events (M.smart-concat events ",")
+        patterns (M.smart-concat patterns ",")
         vlua (_vlua `(fn [] ,...) :autocmd)
-        command (_smart-concat ["autocmd " events " " patterns " :call " `ZEST_VLUA# "()"])]
+        command (M.smart-concat ["autocmd " events " " patterns " :call " `ZEST_VLUA# "()"])]
     `(let [ZEST_VLUA# ,vlua]
        (vim.cmd ,command))))
 

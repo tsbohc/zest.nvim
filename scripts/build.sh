@@ -6,6 +6,7 @@ declare -A files=(
   ["../fnl/zest/init.fnl"]="../lua/zest/init.lua"
   ["../fnl/zest/compile.fnl"]="../lua/zest/compile.lua"
   ["../plugin/init.fnl"]="../plugin/init.lua"
+  ["../fnl/zest/test/init.fnl"]="../lua/zest/test/init.lua"
 )
 
 for source in "${!files[@]}"; do
