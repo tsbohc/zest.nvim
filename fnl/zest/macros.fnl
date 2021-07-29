@@ -155,6 +155,25 @@
     `(let [ZEST_VLUA# ,vlua]
        (vim.cmd ,command))))
 
+; command
+
+(fn _dumb-varg? [xs]
+  (var va? false)
+  (for [i 1 (length xs)]
+    (when (= (tostring (. xs i)) "...")
+      (set va? true)))
+  va?)
+
+(fn M.def-command-fn [name args ...]
+  (let [len (length args)
+        vlua (_vlua `(fn ,args ,...) :command name)
+        va? (_dumb-varg? args)
+        nargs (.. "-nargs=" (if va?  "*" (match len 0 "0" 1 "1" _ "*")))
+        f-args (if va?  "<f-args>" (match len 0 "" 1 "<q-args>" _ "<f-args>"))
+        command (M.smart-concat ["command " nargs " " name " :call " `ZEST_VLUA# "(" f-args ")"])]
+    `(let [ZEST_VLUA# ,vlua]
+       (vim.cmd ,command))))
+
 ; setoption bakery
 
 ; opt-set      opt-local-set      opt-global-set
@@ -183,8 +202,6 @@
     (tset M (.. "opt" (scope:gsub "_" "-") "-" act)
           (fn [key val]
             (_opt-act scope key val act)))))
-
-; TODO
 
 ; packer
 

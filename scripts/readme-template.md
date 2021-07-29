@@ -170,7 +170,7 @@ To disable `noremap`, include `:remap` after the modes.
 {{lua:def-keymap-fn2}}
 ```
 
-## autocommands
+## autocmds
 
 ### def-augroup
 
@@ -216,6 +216,29 @@ To disable `noremap`, include `:remap` after the modes.
 {{lua:def-augroup-dirty1}}
 ```
 
+## commands
+
+### def-command-fn
+
+- Assign a function to an ex command
+
+```clojure
+{{fnl:def-command1}}
+```
+```lua
+{{lua:def-command1}}
+```
+
+The number of arguments is handled automatically:
+
+```
+[]       -nargs=0    --
+[x]      -nargs=1 <q-args>
+[...]    -nargs=* <f-args>
+[x ...]  -nargs=* <f-args>
+[x y]    -nargs=* <f-args>
+```
+
 ## notes
 
 ### a tale of two macros
@@ -234,22 +257,6 @@ That said, `def-keymap` and others can accept functions if they have been wrappe
   (vlua-format
     ":call %s()<cr>"
     my-fn))
-```
-
-### user commands
-
-There isn't a more concise way to define user commands than using straight up strings. I don't see much benefit in passing individual arguments with s-expressions or lists: it's far too verbose.
-
-I would suggest doing something like this:
-
-```clojure
-(fn def-command [s f]
-  (let [s (.. ":command " s)]
-    (vim.cmd (if f (vlua-format s f) s))))
-
-(def-command
-  "-nargs=* Mycmd :call %s(<f-args>)"
-  Mycmd)
 ```
 
 ### text objects

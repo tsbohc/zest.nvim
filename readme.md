@@ -236,7 +236,7 @@ do
 end
 ```
 
-## autocommands
+## autocmds
 
 ### def-augroup
 
@@ -314,6 +314,41 @@ do
 end
 ```
 
+## commands
+
+### def-command-fn
+
+- Assign a function to an ex command
+
+```clojure
+(def-command-fn :MyCmd [...]
+  (print ...))
+```
+```lua
+do
+  local ZEST_VLUA_0_
+  do
+    local ZEST_ID_0_ = "_77_121_67_109_100_"
+    local function _0_(...)
+      return print(...)
+    end
+    _G._zest["command"][ZEST_ID_0_] = _0_
+    ZEST_VLUA_0_ = ("v:lua._zest.command." .. ZEST_ID_0_)
+  end
+  vim.cmd(("command -nargs=* MyCmd :call " .. ZEST_VLUA_0_ .. "(<f-args>)"))
+end
+```
+
+The number of arguments is handled automatically:
+
+```
+[]       -nargs=0    --
+[x]      -nargs=1 <q-args>
+[...]    -nargs=* <f-args>
+[x ...]  -nargs=* <f-args>
+[x y]    -nargs=* <f-args>
+```
+
 ## notes
 
 ### a tale of two macros
@@ -332,22 +367,6 @@ That said, `def-keymap` and others can accept functions if they have been wrappe
   (vlua-format
     ":call %s()<cr>"
     my-fn))
-```
-
-### user commands
-
-There isn't a more concise way to define user commands than using straight up strings. I don't see much benefit in passing individual arguments with s-expressions or lists: it's far too verbose.
-
-I would suggest doing something like this:
-
-```clojure
-(fn def-command [s f]
-  (let [s (.. ":command " s)]
-    (vim.cmd (if f (vlua-format s f) s))))
-
-(def-command
-  "-nargs=* Mycmd :call %s(<f-args>)"
-  Mycmd)
 ```
 
 ### text objects

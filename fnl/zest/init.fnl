@@ -31,6 +31,7 @@
 (fn M.setup [xt]
   (set _G._zest
        {:keymap {}
+        :command {}
         :autocmd {:# 1}
         :textobject {}
         :operator {}
