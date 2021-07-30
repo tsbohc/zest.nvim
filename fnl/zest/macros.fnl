@@ -54,6 +54,9 @@
        (tset _G._zest ,kind :# (+ ZEST_N# 1))
        (.. ,(.. "v:lua._zest." kind ".") ZEST_ID#))))
 
+; notes: we can't do book keeping at compile time as ids will get overridden unless they're all compiled at once
+; hmmm what if we compile aaaaall files at once into a single init.lua?
+
 (fn _vlua-format [s f kind id]
   "a string.format wrapper for _vlua"
   `(string.format ,s ,(_vlua f kind id)))

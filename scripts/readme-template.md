@@ -1,54 +1,54 @@
-<div align="center">
-<h1 align="center">
-  zest.nvim
-</h1>
-a pinch of lisp for a tangy init.lua
-</div>
-<br>
+# zest.nvim
 
-An opinionated macro library that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
+> These are your father's parentheses.  
+> Elegant weapons for a more... civilized age.  
+— [xkcd/297](https://xkcd.com/297/)
 
-For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl/lua). The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
+An opinionated library of macros that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
 
-### features
+For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl/lua).
 
-- Syntactically sweet macros inspired by viml
-- Macros that seamlessly integrate lua functions into viml
-- Almost everything is done at compile time
-- Can be configured to recompile files on `BufWritePost`
-- No startup penalty
+### a short pitch
+
+- Provide a syntactically sweet way of interacting with select parts of lua api
+- Seamlessly integrate lua functions into keymaps, autocmds, etc
+- Be primarily a library of macros, do as much as possible at compile time
+- Output code that is readable and efficient
+- Remain compatible with everything, yet standalone
 
 <b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me in an issue or at @tsbohc on the [conjure discord](conjure.fun/discord).
 
-## usage
+## setup
 
-#### with aniseed
+#### as a companion library
+
+If you're already using a plugin that integrates fennel into neovim, such as [aniseed](https://github.com/Olical/aniseed) or [hotpot](https://github.com/rktjmp/hotpot.nvim), follow these instructions:
 
 - Install with your favourite package manager
 ```clojure
 (use :tsbohc/zest.nvim)
 ```
-- Run `zest.setup` to initialise `_G._zest` before using any of the macros
 
+- Before using any of the macros, run `zest.setup` with no arguments
 ```clojure
 (let [zest (require :zest)]
   (zest.setup))
 ```
 
-- Import the macros you wish to use in the current file, aliasing them as you like
+- Import and alias the macros you wish to use in the current file
 ```clojure
 (import-macros
   {:opt-prepend opt^} :zest.macros)
 ```
 
-#### without aniseed
+#### standalone
 
-When installed on its own, zest can be configured to mirror the `source` directory tree to `target`. When a relevant file is saved, zest will display a message and recompile it. 
+When installed on its own, zest can be configured to mirror the `source` directory tree to `target`. When a relevant file is saved, zest will display a message and recompile it.
 
 Unless configured, zest will not initialise its compiler.
 
 <details>
-  <summary>Show an example of standalone configuration</summary>
+  <summary>Show an example of a standalone configuration</summary>
 
   <br>
 
@@ -229,7 +229,7 @@ To disable `noremap`, include `:remap` after the modes.
 {{lua:def-command1}}
 ```
 
-The number of arguments is handled automatically:
+Arguments are handled automatically like so:
 
 ```
 []       -nargs=0    --
