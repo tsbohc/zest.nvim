@@ -20,7 +20,7 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 
 ## setup
 
-#### as a companion library
+### as a companion library
 
 If you're already using a plugin that integrates fennel into neovim, such as [aniseed](https://github.com/Olical/aniseed) or [hotpot](https://github.com/rktjmp/hotpot.nvim), follow these instructions:
 
@@ -41,7 +41,7 @@ If you're already using a plugin that integrates fennel into neovim, such as [an
   {:opt-prepend opt^} :zest.macros)
 ```
 
-#### standalone
+### standalone
 
 When installed on its own, zest can be configured to mirror the `source` directory tree to `target`. When a relevant file is saved, zest will display a message and recompile it.
 
@@ -76,6 +76,11 @@ The examples are refreshed with every change to zest and are always up to date.
 ```clojure
 (local v (vlua my_fn))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 local v
 do
@@ -86,6 +91,8 @@ do
   v = ("v:lua._zest.v." .. ZEST_ID_0_)
 end
 ```
+
+</details>
 
 ### vlua-format
 
@@ -98,6 +105,11 @@ end
     (fn [...]
       (print ...))))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 local function _0_(...)
   local ZEST_N_0_ = _G._zest.v["#"]
@@ -112,6 +124,8 @@ end
 vim.cmd(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
 ```
 
+</details>
+
 ## options
 
 - A complete `vim.opt` wrapper
@@ -119,24 +133,25 @@ vim.cmd(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
 ```clojure
 (opt-local-append completeopt ["menuone" "noselect"])
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do end (vim.opt_local.completeopt):append({"menuone", "noselect"})
 ```
 
-<details>
-  <summary>Full list of <code>opt-</code> macros</summary>
-
-  <br>
-
-  ```
-  opt-set      opt-local-set      opt-global-set
-  opt-get      opt-local-get      opt-global-get
-  opt-append   opt-local-append   opt-global-append
-  opt-prepend  opt-local-prepend  opt-global-prepend
-  opt-remove   opt-local-remove   opt-global-remove
-  ```
-
 </details>
+
+Full list of <code>opt-</code> macros:
+```
+opt-set      opt-local-set      opt-global-set
+opt-get      opt-local-get      opt-global-get
+opt-append   opt-local-append   opt-global-append
+opt-prepend  opt-local-prepend  opt-global-prepend
+opt-remove   opt-local-remove   opt-global-remove
+```
 
 ## keymaps
 
@@ -147,6 +162,11 @@ do end (vim.opt_local.completeopt):append({"menuone", "noselect"})
 ```clojure
 (def-keymap :H [nv] "0")
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_OPTS_0_ = {noremap = true}
@@ -155,17 +175,26 @@ do
 end
 ```
 
+</details>
+
 - Map lua expressions
 
 ```clojure
 (each [_ k (ipairs [:h :j :k :l])]
   (def-keymap (.. "<c-" k ">") [n] (.. "<c-w>" k)))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 for _, k in ipairs({"h", "j", "k", "l"}) do
   vim.api.nvim_set_keymap("n", ("<c-" .. k .. ">"), ("<c-w>" .. k), {noremap = true})
 end
 ```
+
+</details>
 
 - Map pairs
 
@@ -174,6 +203,11 @@ end
   {:<ScrollWheelUp>   "<c-y>"
    :<ScrollWheelDown> "<c-e>"})
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_OPTS_0_ = {noremap = true}
@@ -181,6 +215,8 @@ do
   vim.api.nvim_set_keymap("n", "<ScrollWheelDown>", "<c-e>", ZEST_OPTS_0_)
 end
 ```
+
+</details>
 
 To disable `noremap`, include `:remap` after the modes.
 
@@ -192,6 +228,11 @@ To disable `noremap`, include `:remap` after the modes.
 (def-keymap-fn :<c-m> [n]
   (print "hello from fennel!"))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_VLUA_0_
@@ -208,12 +249,19 @@ do
 end
 ```
 
+</details>
+
 - Define an expression as a function
 
 ```clojure
 (def-keymap-fn :k [nv :expr]
   (if (> vim.v.count 0) "k" "gk"))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_VLUA_0_
@@ -236,6 +284,8 @@ do
 end
 ```
 
+</details>
+
 ## autocmds
 
 ### def-augroup
@@ -245,6 +295,11 @@ end
 ```clojure
 (def-augroup :my-augroup)
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   vim.cmd("augroup my-augroup")
@@ -252,6 +307,8 @@ do
   vim.cmd("augroup END")
 end
 ```
+
+</details>
 
 ### def-autocmd
 
@@ -261,9 +318,16 @@ end
 (def-autocmd [:BufNewFile my_event] [:*.html :*.xml]
   "setlocal nowrap")
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 vim.cmd(("au " .. table.concat({"BufNewFile", my_event}, ",") .. " *.html,*.xml setlocal nowrap"))
 ```
+
+</details>
 
 ### def-autocmd-fn
 
@@ -276,6 +340,11 @@ vim.cmd(("au " .. table.concat({"BufNewFile", my_event}, ",") .. " *.html,*.xml 
                (<= (vim.fn.line "'\"") (vim.fn.line "$")))
       (vim.cmd "normal! g'\""))))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   vim.cmd("augroup restore-position")
@@ -300,6 +369,8 @@ do
 end
 ```
 
+</details>
+
 ### def-augroup-dirty
 
 - Define an augroup without `autocmd!`
@@ -307,12 +378,19 @@ end
 ```clojure
 (def-augroup-dirty :my-dirty-augroup)
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   vim.cmd("augroup my-dirty-augroup")
   vim.cmd("augroup END")
 end
 ```
+
+</details>
 
 ## commands
 
@@ -324,6 +402,11 @@ end
 (def-command-fn :MyCmd [...]
   (print ...))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_VLUA_0_
@@ -338,6 +421,8 @@ do
   vim.cmd(("command -nargs=* MyCmd :call " .. ZEST_VLUA_0_ .. "(<f-args>)"))
 end
 ```
+
+</details>
 
 Arguments are handled automatically like so:
 
