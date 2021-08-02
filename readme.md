@@ -1,54 +1,54 @@
-<div align="center">
-<h1 align="center">
-  zest.nvim
-</h1>
-a pinch of lisp for a tangy init.lua
-</div>
-<br>
+# zest.nvim
 
-An opinionated macro library that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
+> These are your father's parentheses.  
+> Elegant weapons for a more... civilized age.  
+— [xkcd/297](https://xkcd.com/297/)
 
-For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl/lua). The plugin can be installed on its own or together with [aniseed](https://github.com/Olical/aniseed).
+An opinionated library of macros that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
 
-### features
+For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl/lua).
 
-- Syntactically sweet macros inspired by viml
-- Macros that seamlessly integrate lua functions into viml
-- Almost everything is done at compile time
-- Can be configured to recompile files on `BufWritePost`
-- No startup penalty
+### a short pitch
+
+- Provide a syntactically sweet way of interacting with select parts of lua api
+- Seamlessly integrate lua functions into keymaps, autocmds, etc
+- Be primarily a library of macros, do as much as possible at compile time
+- Output code that is readable and efficient
+- Remain compatible with everything, yet standalone
 
 <b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me in an issue or at @tsbohc on the [conjure discord](conjure.fun/discord).
 
-## usage
+## setup
 
-#### with aniseed
+### as a companion library
+
+If you're already using a plugin that integrates fennel into neovim, such as [aniseed](https://github.com/Olical/aniseed) or [hotpot](https://github.com/rktjmp/hotpot.nvim), follow these instructions:
 
 - Install with your favourite package manager
 ```clojure
 (use :tsbohc/zest.nvim)
 ```
-- Run `zest.setup` to initialise `_G._zest` before using any of the macros
 
+- Before using any of the macros, run `zest.setup` with no arguments
 ```clojure
 (let [zest (require :zest)]
   (zest.setup))
 ```
 
-- Import the macros you wish to use in the current file, aliasing them as you like
+- Import and alias the macros you wish to use in the current file
 ```clojure
 (import-macros
   {:opt-prepend opt^} :zest.macros)
 ```
 
-#### without aniseed
+### standalone
 
-When installed on its own, zest can be configured to mirror the `source` directory tree to `target`. When a relevant file is saved, zest will display a message and recompile it. 
+When installed on its own, zest can be configured to mirror the `source` directory tree to `target`. When a relevant file is saved, zest will display a message and recompile it.
 
 Unless configured, zest will not initialise its compiler.
 
 <details>
-  <summary>Show an example of standalone configuration</summary>
+  <summary>Show an example of a standalone configuration</summary>
 
   <br>
 
@@ -76,6 +76,11 @@ The examples are refreshed with every change to zest and are always up to date.
 ```clojure
 (local v (vlua my_fn))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 local v
 do
@@ -86,6 +91,8 @@ do
   v = ("v:lua._zest.v." .. ZEST_ID_0_)
 end
 ```
+
+</details>
 
 ### vlua-format
 
@@ -98,6 +105,11 @@ end
     (fn [...]
       (print ...))))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 local function _0_(...)
   local ZEST_N_0_ = _G._zest.v["#"]
@@ -112,6 +124,8 @@ end
 vim.cmd(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
 ```
 
+</details>
+
 ## options
 
 - A complete `vim.opt` wrapper
@@ -119,24 +133,25 @@ vim.cmd(string.format(":com -nargs=* Mycmd :call %s(<f-args>)", _0_(...)))
 ```clojure
 (opt-local-append completeopt ["menuone" "noselect"])
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do end (vim.opt_local.completeopt):append({"menuone", "noselect"})
 ```
 
-<details>
-  <summary>Full list of <code>opt-</code> macros</summary>
-
-  <br>
-
-  ```
-  opt-set      opt-local-set      opt-global-set
-  opt-get      opt-local-get      opt-global-get
-  opt-append   opt-local-append   opt-global-append
-  opt-prepend  opt-local-prepend  opt-global-prepend
-  opt-remove   opt-local-remove   opt-global-remove
-  ```
-
 </details>
+
+Full list of <code>opt-</code> macros:
+```
+opt-set      opt-local-set      opt-global-set
+opt-get      opt-local-get      opt-global-get
+opt-append   opt-local-append   opt-global-append
+opt-prepend  opt-local-prepend  opt-global-prepend
+opt-remove   opt-local-remove   opt-global-remove
+```
 
 ## keymaps
 
@@ -147,6 +162,11 @@ do end (vim.opt_local.completeopt):append({"menuone", "noselect"})
 ```clojure
 (def-keymap :H [nv] "0")
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_OPTS_0_ = {noremap = true}
@@ -155,17 +175,26 @@ do
 end
 ```
 
+</details>
+
 - Map lua expressions
 
 ```clojure
 (each [_ k (ipairs [:h :j :k :l])]
   (def-keymap (.. "<c-" k ">") [n] (.. "<c-w>" k)))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 for _, k in ipairs({"h", "j", "k", "l"}) do
   vim.api.nvim_set_keymap("n", ("<c-" .. k .. ">"), ("<c-w>" .. k), {noremap = true})
 end
 ```
+
+</details>
 
 - Map pairs
 
@@ -174,6 +203,11 @@ end
   {:<ScrollWheelUp>   "<c-y>"
    :<ScrollWheelDown> "<c-e>"})
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_OPTS_0_ = {noremap = true}
@@ -181,6 +215,8 @@ do
   vim.api.nvim_set_keymap("n", "<ScrollWheelDown>", "<c-e>", ZEST_OPTS_0_)
 end
 ```
+
+</details>
 
 To disable `noremap`, include `:remap` after the modes.
 
@@ -192,6 +228,11 @@ To disable `noremap`, include `:remap` after the modes.
 (def-keymap-fn :<c-m> [n]
   (print "hello from fennel!"))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_VLUA_0_
@@ -208,12 +249,19 @@ do
 end
 ```
 
+</details>
+
 - Define an expression as a function
 
 ```clojure
 (def-keymap-fn :k [nv :expr]
   (if (> vim.v.count 0) "k" "gk"))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_VLUA_0_
@@ -236,6 +284,8 @@ do
 end
 ```
 
+</details>
+
 ## autocmds
 
 ### def-augroup
@@ -245,6 +295,11 @@ end
 ```clojure
 (def-augroup :my-augroup)
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   vim.cmd("augroup my-augroup")
@@ -252,6 +307,8 @@ do
   vim.cmd("augroup END")
 end
 ```
+
+</details>
 
 ### def-autocmd
 
@@ -261,9 +318,16 @@ end
 (def-autocmd [:BufNewFile my_event] [:*.html :*.xml]
   "setlocal nowrap")
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 vim.cmd(("au " .. table.concat({"BufNewFile", my_event}, ",") .. " *.html,*.xml setlocal nowrap"))
 ```
+
+</details>
 
 ### def-autocmd-fn
 
@@ -276,6 +340,11 @@ vim.cmd(("au " .. table.concat({"BufNewFile", my_event}, ",") .. " *.html,*.xml 
                (<= (vim.fn.line "'\"") (vim.fn.line "$")))
       (vim.cmd "normal! g'\""))))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   vim.cmd("augroup restore-position")
@@ -300,6 +369,8 @@ do
 end
 ```
 
+</details>
+
 ### def-augroup-dirty
 
 - Define an augroup without `autocmd!`
@@ -307,12 +378,19 @@ end
 ```clojure
 (def-augroup-dirty :my-dirty-augroup)
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   vim.cmd("augroup my-dirty-augroup")
   vim.cmd("augroup END")
 end
 ```
+
+</details>
 
 ## commands
 
@@ -324,6 +402,11 @@ end
 (def-command-fn :MyCmd [...]
   (print ...))
 ```
+<details>
+  <summary><code>show lua</code></summary>
+
+  <br>
+
 ```lua
 do
   local ZEST_VLUA_0_
@@ -339,7 +422,9 @@ do
 end
 ```
 
-The number of arguments is handled automatically:
+</details>
+
+Arguments are handled automatically like so:
 
 ```
 []       -nargs=0    --
