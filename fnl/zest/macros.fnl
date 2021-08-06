@@ -71,6 +71,10 @@
   "a user macro for _vlua-format"
   `,(_vlua-format s f :v))
 
+(fn M.vfn [s ...]
+  (let [f `(fn ,...)]
+    `,(_vlua-format s f :v)))
+
 ; keymaps
 
 (fn _keymap-options [args]
@@ -87,7 +91,7 @@
 (fn M.def-keymap [...]
   (let [arg-xs [...]
         out []]
-    (match (# arg-xs)
+    (match (length arg-xs)
       3 (let [(fs args ts) (unpack arg-xs)
               (modes opts) (_keymap-options args)]
           (if (> (length modes) 1)
@@ -123,6 +127,29 @@
       `(let [ZEST_VLUA# ,vlua
              ZEST_RHS# ,rhs]
          (vim.api.nvim_set_keymap ,modes ,fs ZEST_RHS# ,opts)))))
+
+;(fn M.unquote? [sy]
+;  (let [ref (?. sy 1 1)]
+;    (= ref :unquote)))
+;
+;(fn M.test [f]
+;  (if (M.unquote? f)
+;    `(print "function" ,(. f 2))
+;    `(print "string" ,f)))
+
+
+;(fn M.test [data]
+;  (print data)
+;  (let [f (require :zest.fennel)]
+;    (if (f.sequence? data)
+;      `(print "function" ,(unpack data))
+;      `(print "string" ,data))))
+
+;(fn M.test [data]
+;  (print (tostring data))
+;  (if (= (string.sub (tostring data) 1 3) "[")
+;    `(print "function" ,(unpack data))
+;    `(print "string" ,data)))
 
 ; autocmd
 

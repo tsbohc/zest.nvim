@@ -67,7 +67,7 @@ Unless configured, zest will not initialise its compiler.
 # macros
 In each example, the top block contains the fennel code written in the configuration, while the bottom one shows the lua code that neovim will execute.
 
-The examples are refreshed with every change to zest and are always up to date.
+> The examples are refreshed with every change to zest and are always up to date.
 
 ### vlua
 
