@@ -41,7 +41,13 @@
         (tset conf k v)))
     conf))
 
+
+(fn _G.___zest_inspect []
+  (print (vim.inspect _G._zest)))
+
 (fn M.setup [xt]
+  (vim.cmd ":command! ZestInspect :call v:lua.___zest_inspect()")
+
   (set _G._zest
        {:# 1
         :keymap {:# 1}

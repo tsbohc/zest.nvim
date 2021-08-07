@@ -46,7 +46,11 @@ local function config(xt)
   end
   return conf
 end
+_G.___zest_inspect = function()
+  return print(vim.inspect(_G._zest))
+end
 M.setup = function(xt)
+  vim.cmd(":command! ZestInspect :call v:lua.___zest_inspect()")
   _G._zest = {["#"] = 1, autocmd = {["#"] = 1}, command = {["#"] = 1}, config = config(xt), keymap = {["#"] = 1}, operator = {["#"] = 1}, store = store, textobject = {["#"] = 1}, v = {["#"] = 1}}
   return nil
 end

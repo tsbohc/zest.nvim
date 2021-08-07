@@ -10,7 +10,7 @@
 (local fennel (require :zest.fennel))
 (local list fennel.list)
 
-; utils
+;; utils
 
 (local fs {})
 
@@ -47,41 +47,42 @@
         (fs.write tmp (.. time "\n" id))
         (.. "_" id "_" time)))))
 
-(fn _smart-concat [xs d]
-  "concatenate literals in xs"
-  (let [out []]
-    (var last-string? false)
-    (each [_ v (ipairs xs)]
-      (let [string? (or (= (type v) :string)
-                        (= (type v) :number))
-            len (length out)]
-        (if (and last-string?
-                 string?)
-          (tset out len (.. (. out len) d v))
-          (table.insert out v))
-        (set last-string? string?)))
-    out))
+; {{{
+;(fn _smart-concat [xs d]
+;  "concatenate literals in xs"
+;  (let [out []]
+;    (var last-string? false)
+;    (each [_ v (ipairs xs)]
+;      (let [string? (or (= (type v) :string)
+;                        (= (type v) :number))
+;            len (length out)]
+;        (if (and last-string?
+;                 string?)
+;          (tset out len (.. (. out len) d v))
+;          (table.insert out v))
+;        (set last-string? string?)))
+;    out))
+;
+;(fn _concat [xs d]
+;  (let [d (or d "")]
+;    (var out [])
+;    (match xs
+;      (where s (or (= (type s) :string)
+;                   (= (type s) :number)))
+;      (table.insert out (tostring s))
+;      (where q (fennel.sym? q))
+;      (table.insert out `(if (= (type ,xs) :string)
+;                           ,xs
+;                           (table.concat ,xs ,d)))
+;      _ (set out (_smart-concat xs d)))
+;    (if (= (length out) 1)
+;      `,(unpack out)
+;      (if (= d "")
+;        `(.. ,(unpack out))
+;        `(table.concat ,out ,d)))))
+; }}}
 
-(fn _concat [xs d]
-  (let [d (or d "")]
-    (var out [])
-    (match xs
-      (where s (or (= (type s) :string)
-                   (= (type s) :number)))
-      (table.insert out (tostring s))
-      (where q (fennel.sym? q))
-      (table.insert out
-        `(if (= (type ,xs) :string)
-           ,xs
-           (table.concat ,xs ,d)))
-      _ (set out (_smart-concat xs d)))
-    (if (= (length out) 1)
-      `,(unpack out)
-      (if (= d "")
-        `(.. ,(unpack out))
-        `(table.concat ,out ,d)))))
-
-; vlua
+;; zest
 
 (fn hasfn? [x] (= (?. x 1 1) :hashfn))
 (fn fn? [x] (= (?. x 1 1) :fn))
@@ -90,7 +91,9 @@
 
 (fn zf [f]
   "treat a function before passing it off to vlua"
-  (let [f (if (fennel.sequence? f) `(fn [] ,(unpack f)) f)]
+  (let [f (if (fennel.sequence? f)
+            `(fn [] ,(unpack f))
+            f)]
     (if (or (fn? f)
               (hasfn? f)
               (partial? f)
@@ -98,16 +101,50 @@
                    (capitalised? (tostring f))))
       f)))
 
-(fn vlua [f]
+;; vlua
+
+(fn _vlua [s f]
+  "store a function in _G._zest and return its v:lua, formatting if needed"
   (let [f (zf f)]
     (when f
       (let [id (uid)
             vlua (.. "v:lua._zest." id)]
-        `(do
-           (tset _G._zest ,id ,f)
-           ,vlua)))))
+        (list 'do
+              (list 'tset '_G._zest id f)
+              (if s
+                (list 'string.format s vlua)
+                vlua))))))
 
-; keymap
+(fn vlua [x y]
+  "prepare arguments for _vlua"
+  (match [x y]
+    [x nil] (_vlua nil x)
+    [x y]   (_vlua x   y)))
+
+;; options
+
+; set-option
+
+(fn _set-option [scope action key val]
+  "complete vim.opt wrapper"
+  (let [opt (.. "vim.opt" scope "." key)]
+    (if action
+      (list (sym (.. opt ":" action)) val)
+      (list 'set (sym opt) val))))
+
+(fn set-option [x y z]
+  "prepare arguments for _set-option"
+  (match [x y z]
+    [x y nil] (_set-option "" nil (tostring x) (or y true))
+    [x y z]   (let [(scope action) (match (tostring (. x 1))
+                                     :l (values "_local"  (. x 2))
+                                     :g (values "_global" (. x 2))
+                                     _  (values ""        (. x 1)))]
+                (_set-option scope action (tostring y) (or z true)))))
+
+; get-option? vim.bo/vim.wo vim.o vim.go?
+
+;; keymaps
 
 (fn _keymap-options [args]
   "convert seq of options 'args' to 'modes' string and keymap 'opts'"
@@ -120,6 +157,7 @@
         (tset opts o true)))
     (values modes opts)))
 
+; buffer scoped with :buffer0 :buffer1 passed as options. why in a macro though?
 (fn def-keymap [args lhs rhs]
   (let [(modes opts) (_keymap-options args)
         id (uid)
@@ -129,41 +167,20 @@
                (.. ":call v:lua._zest." id ".f()<cr>"))]
     (list 'do
           (list 'local 'zest_keymap#
-                {: f
-                 : modes
-                 : opts
-                 : lhs
+                {: f : modes : opts : lhs
                  :rhs (if f vlua rhs)})
           (list 'tset '_G._zest id 'zest_keymap#)
           (let [out []]
             (each [m (modes:gmatch ".")]
-              (table.insert out
-                `(vim.api.nvim_set_keymap
-                   ,m
-                   zest_keymap#.lhs
-                   zest_keymap#.rhs
-                   zest_keymap#.opts)))
+              (table.insert out `(vim.api.nvim_set_keymap ,m
+                                                          zest_keymap#.lhs
+                                                          zest_keymap#.rhs
+                                                          zest_keymap#.opts)))
             (unpack out)))))
 
-(fn def-autocmd [events patterns rhs]
-  (let [events (_concat events ",")
-        patterns (_concat patterns ",")
-        id (uid)
-        f (zf rhs)
-        vlua (.. ":call v:lua._zest." id ".f()")]
-    (list 'do
-          (list 'local 'zest_autocmd#
-                {: f
-                 : events
-                 : patterns
-                 :cmd (if f vlua rhs)})
-          (list 'tset '_G._zest id 'zest_autocmd#)
-          `(vim.cmd (.. "autocmd "
-                        zest_autocmd#.events " "
-                        zest_autocmd#.patterns " "
-                        zest_autocmd#.cmd)))))
+;; autocmds
 
-; autocmd
+; def-augroup
 
 (fn _create-augroup [dirty? name ...]
   "define a new augroup, with or without autocmd!"
@@ -183,7 +200,28 @@
 (fn def-augroup-dirty [name ...]
   (_create-augroup true name ...))
 
-{: def-keymap
+; def-autocmd
+
+(fn def-autocmd [events patterns rhs]
+  (let [events (_concat events ",")
+        patterns (_concat patterns ",")
+        id (uid)
+        f (zf rhs)
+        vlua (.. ":call v:lua._zest." id ".f()")]
+    (list 'do
+          (list 'local 'zest_autocmd#
+                {: f : events : patterns
+                 :cmd (if f vlua rhs)})
+          (list 'tset '_G._zest id 'zest_autocmd#)
+          `(vim.cmd (.. "autocmd "
+                        zest_autocmd#.events " "
+                        zest_autocmd#.patterns " "
+                        zest_autocmd#.cmd)))))
+
+{: vlua
+ : vlua-format
+ : set-option
+ : def-keymap
  : def-augroup
  : def-augroup-dirty
  : def-autocmd}
