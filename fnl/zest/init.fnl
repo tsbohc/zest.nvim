@@ -49,15 +49,10 @@
   (vim.cmd ":command! ZestInspect :call v:lua.___zest_inspect()")
 
   (set _G._zest
-       {:# 1
-        :keymap {:# 1}
+       {:keymap {:# 1}
         :command {:# 1}
         :autocmd {:# 1}
-        :textobject {:# 1}
-        :operator {:# 1}
         :v {:# 1}
-        :config (config xt)
-        :store store
-        }))
+        :config (config xt)}))
 
 M
