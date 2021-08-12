@@ -2,10 +2,13 @@
 
 # it's just a handful of files, so
 
+zest="$HOME/code/zest"
+
 declare -A files=(
-  ["../fnl/zest/init.fnl"]="../lua/zest/init.lua"
-  ["../fnl/zest/compile.fnl"]="../lua/zest/compile.lua"
-  ["../plugin/init.fnl"]="../plugin/init.lua"
+  ["$zest/fnl/zest/init.fnl"]="$zest/lua/zest/init.lua"
+  ["$zest/fnl/zest/compile.fnl"]="$zest/lua/zest/compile.lua"
+  ["$zest/plugin/init.fnl"]="$zest/plugin/init.lua"
+  ["$zest/fnl/zest/lime/lime.fnl"]="$zest/lua/zest/lime/lime.lua"
 )
 
 for source in "${!files[@]}"; do

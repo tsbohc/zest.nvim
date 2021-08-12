@@ -1,33 +1,33 @@
 local fs = {}
 fs.read = function(path)
   local file = assert(io.open(path, "r"))
-  local function close_handlers_0_(ok_0_, ...)
+  local function close_handlers_7_auto(ok_8_auto, ...)
     file:close()
-    if ok_0_ then
+    if ok_8_auto then
       return ...
     else
       return error(..., 0)
     end
   end
-  local function _0_()
+  local function _2_()
     return file:read("*a")
   end
-  return close_handlers_0_(xpcall(_0_, (package.loaded.fennel or debug).traceback))
+  return close_handlers_7_auto(xpcall(_2_, (package.loaded.fennel or debug).traceback))
 end
 fs.write = function(path, content)
   local file = assert(io.open(path, "w"))
-  local function close_handlers_0_(ok_0_, ...)
+  local function close_handlers_7_auto(ok_8_auto, ...)
     file:close()
-    if ok_0_ then
+    if ok_8_auto then
       return ...
     else
       return error(..., 0)
     end
   end
-  local function _0_()
+  local function _4_()
     return file:write(content)
   end
-  return close_handlers_0_(xpcall(_0_, (package.loaded.fennel or debug).traceback))
+  return close_handlers_7_auto(xpcall(_4_, (package.loaded.fennel or debug).traceback))
 end
 fs.dirname = function(path)
   return path:match("(.*[/\\])")
@@ -69,23 +69,23 @@ M.compile = function()
       vim.api.nvim_command(":redraw")
       vim.api.nvim_echo({{" zest ", "Search"}, {" ", "None"}, {vim.fn.expand("%:t"), "None"}, {" => ", "Comment"}, {target:gsub(vim.env.HOME, "~"), "None"}}, false, {})
     end
-    local _1_ = {fnl_path, lua_path}
-    if ((type(_1_) == "table") and (nil ~= (_1_)[1]) and (nil ~= (_1_)[2])) then
-      local x = (_1_)[1]
-      local y = (_1_)[2]
+    local _7_ = {fnl_path, lua_path}
+    if ((type(_7_) == "table") and (nil ~= (_7_)[1]) and (nil ~= (_7_)[2])) then
+      local x = (_7_)[1]
+      local y = (_7_)[2]
       vim.fn.mkdir(fs.dirname(target), "p")
       return fs.write(target, fennel.compileString(fs.read(source)))
-    elseif ((type(_1_) == "table") and ((_1_)[1] == nil) and (nil ~= (_1_)[2])) then
-      local x = (_1_)[2]
+    elseif ((type(_7_) == "table") and ((_7_)[1] == nil) and (nil ~= (_7_)[2])) then
+      local x = (_7_)[2]
       return print("<zest> invalid source path!")
-    elseif ((type(_1_) == "table") and (nil ~= (_1_)[1]) and ((_1_)[2] == nil)) then
-      local x = (_1_)[1]
+    elseif ((type(_7_) == "table") and (nil ~= (_7_)[1]) and ((_7_)[2] == nil)) then
+      local x = (_7_)[1]
       return print("<zest> invalid target path!")
     end
   end
 end
-local function _0_(_, ...)
+local function _10_(_, ...)
   return M.compile(...)
 end
-setmetatable(M, {__call = _0_})
+setmetatable(M, {__call = _10_})
 return M

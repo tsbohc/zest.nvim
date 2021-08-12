@@ -65,6 +65,8 @@
         [x y]
         (do
           (vim.fn.mkdir (fs.dirname target) :p)
+          ;if (source:find ".lua$")
+          ;  (os.execute (.. "ln -sf " source " " target))
           (fs.write target (fennel.compileString (fs.read source))))
         [nil x]
         (print "<zest> invalid source path!")
