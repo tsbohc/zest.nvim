@@ -6,7 +6,7 @@
 
 An opinionated library of macros that aims to streamline the process of configuring [neovim](https://neovim.io/) with [fennel](https://fennel-lang.org/), a lisp that compiles to lua.
 
-For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/tree/master/etc/nvim.d/fnl/lua).
+For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/).
 
 ### a short pitch
 
@@ -17,6 +17,8 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 - Remain compatible with everything, yet standalone
 
 <b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me in an issue or at @tsbohc on the [conjure discord](conjure.fun/discord).
+
+<b>Deprecation notice</b> I'll be overhauling the macros some time later this month. The old macros will stay for a while though. The `-fn` macros will be merged into regular ones.
 
 ## setup
 
