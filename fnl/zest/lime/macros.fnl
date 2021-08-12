@@ -72,7 +72,10 @@
 ;
 ;          )))
 
+; FIXME i think it'd be better if i just split those into two. extracting some code and repeating a bit is better than this
 (fn def-keymap [args lhs rhs]
+
+  ; TODO extract options like you had before
   (let [modes (tostring (table.remove args 1))
         opts (let [opts {:noremap true}]
                (each [_ o (ipairs args)]
@@ -80,6 +83,8 @@
                    (tset opts :noremap false)
                    (tset opts o true)))
                opts)
+
+        ; TODO separate into normal and fn macros and use this one as the entry point
         f (_zf rhs)
         id (scall :keymap_id lhs modes)
         id-sym (gensym "zest_id")
@@ -87,7 +92,7 @@
         opts-sym (gensym "zest_opts")]
     (list 'do
           (if f (list 'local id-sym id))
-          (if (and f (not (literal? id))) (list 'local opts-sym opts)) ; only need this if not lit id
+          (if (and f (not (literal? id))) (list 'local opts-sym opts))
           (list 'local keymap-sym
                 {
                  ;: modes
@@ -100,10 +105,13 @@
                           (lime.keymap_vlua id opts)
                           (list 'lime.keymap_vlua id-sym opts-sym)))})
           (if f (list 'tset '_G.zest.keymap id-sym keymap-sym))
+
           ; TODO investigate
-          ; without this the code below disappears from the output...  i have no idea
-          ; only in actual compilation too. something to do with --metadata or fennel ver?
+          ; without this the code below disappears from the output... i have no idea
+          ; only during the actual compilation too. something to do with --metadata or fennel ver?
           true
+
+          ; TODO extract this into a separate macro, one that returns multiple statements or out seq
           (if (= modes "nvo") ; TODO a better check
             (list 'vim.api.nvim_set_keymap
                   ""
@@ -165,10 +173,44 @@
 (fn def-augroup-dirty [name ...]
   (_create-augroup true name ...))
 
+; FIXME definitely refactor
+; TODO note to self: don't worry about splicing actual values of autocmd-sym as strings
+; you'll have to rip that out when the new api comes anyway
+(fn def-autocmd [events patterns rhs]
+  (let [events (scall :concat events ",")
+        patterns (scall :concat patterns ",")
+        f (_zf rhs)
+        id '(lime.id)
+        autocmd-sym (gensym "zest_autocmd")
+        id-sym (gensym "zest_id")
+        vlua-sym (gensym "zest_vlua")]
+
+    ; TODO split into two like before, this as the entry point
+    (let [cmd-xs (fennel.sequence "autocmd" events patterns (if f vlua-sym rhs))]
+      (if (literal? cmd-xs)
+        (list 'vim.cmd (scall :concat cmd-xs " "))
+        (list 'do
+              (if f (list 'local id-sym id))
+              (if f (list 'local vlua-sym (list '.. ":call v:lua.zest.autocmd." id-sym ".f()")))
+              (list 'local autocmd-sym
+                    {: f
+                     : events
+                     : patterns
+                     :rhs (if f vlua-sym rhs)})
+              (if f (list 'tset '_G.zest.keymap id-sym autocmd-sym))
+              (list 'vim.cmd
+                    (list '.. "autocmd "
+                        (sym (.. (tostring autocmd-sym) ".events"))
+                        " "
+                        (sym (.. (tostring autocmd-sym) ".patterns"))
+                        " "
+                        (sym (.. (tostring autocmd-sym) ".rhs")))))))))
+
 {: test
  : def-keymap
  : def-keymap-pairs
  : def-augroup
  : def-augroup-dirty
+ : def-autocmd
  }
 
