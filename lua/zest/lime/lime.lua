@@ -1,5 +1,5 @@
 local M = {}
-_G.zest = {keymap = {}, user = {}}
+_G.zest = {["#"] = 1, autocmd = {}, keymap = {}, user = {}}
 local n = 1
 M.concat = function(xs, d)
   local d0 = (d or "")

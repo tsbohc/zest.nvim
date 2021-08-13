@@ -1,6 +1,6 @@
 (local M {})
 
-(set _G.zest {:keymap {} :user {}})
+(set _G.zest {:# 1 :keymap {} :user {} :autocmd {}})
 
 (var n 1)
 
