@@ -1,11 +1,8 @@
 ; TODO
-; maybe i can get the filename somehow still? on the seq metatable?
-; idx is index... save me from my equal sign alignment ocd
-; FIXME vlua and vlua-format are still missing
+; def-command still missing
 
-(local fennel (require :zest.fennel))
-(local inspect (require :zest.inspect))
-(local lime (require :zest.lime.lime)) ; for some reason init.fnl was not being picked up as :zest.lime
+; hmmm i could actually split stuff like this
+;(local lime (require :zest.lime.lime)) ; for some reason init.fnl was not being picked up as :zest.lime
 
 ;; util
 
@@ -23,13 +20,13 @@
 
 (fn _zfn [f]
   "prepare a function for binding"
-  (let [f (if (fennel.sequence? f)
-            `(fn [] ,(unpack f))
+  (let [f (if (sequence? f)
+            '(fn [] ,(unpack f))
             f)]
     (if (or (_fn? f)
               (_hashfn? f)
               (_partial? f)
-              (and (fennel.sym? f)
+              (and (sym? f)
                    (_capitalised? (tostring f))))
       f)))
 
@@ -37,43 +34,79 @@
   "ordered run time id"
   (let [(len* idx*) (_zsm :len :idx)
         g (sym "_G.zest.#")]
-    `(let [,len* (. _G.zest :#)
+    '(let [,len* (. _G.zest :#)
            ,idx* (.. "_" ,len*)]
        (set ,g (+ ,len* 1))
        ,idx*)))
 
-; TODO rewrite with match
-(fn _lit? [x]
-  (if (fennel.sym? x)
-    false
-    (if (fennel.list? x)
-      false
-      (if (fennel.sequence? x)
-        (do
-          (each [_ v (ipairs x)]
-            (if (not (_lit? v))
-              (lua "return false")))
-          true)
-        (if (or (= (type x) :string)
-                (= (type x) :number)
-                (= x nil))
-          true
-          false)))))
+(fn _smart-concat [xs d]
+  "concatenate literals in xs"
+  (let [out []]
+    (var last-string? false)
+    (each [_ v (ipairs xs)]
+      (let [string? (or (= (type v) :string)
+                        (= (type v) :number))
+            len (length out)]
+        (if (and last-string?
+                 string?)
+          (tset out len (.. (. out len) d v))
+          (table.insert out v))
+        (set last-string? string?)))
+    out))
 
-; this is like 6x concat, 1x keymap_id + bare 1x keymap_vlua
-; maybe i should just rewrite those as macros
-(fn scall [f ...]
-  (var safe? true)
-  (each [_ x (ipairs [...])]
-    (if (not (_lit? x))
-      (set safe? false)))
-  (if safe?
-    (let [res ((. lime f) ...)]
-      (if (and (not (fennel.sym? res))
-               (not (fennel.list? res)))
-        res
-        (list (sym (.. "lime." f)) ...)))
-    (list (sym (.. "lime." f)) ...)))
+(fn _concat [xs d]
+  (let [d (or d "")]
+    (var out [])
+    (match xs
+      (where s (or (= (type s) :string)
+                   (= (type s) :number)))
+      (table.insert out (tostring s))
+      (where q (sym? q))
+      (table.insert out `(if (= (type ,xs) :string)
+                           ,xs
+                           (table.concat ,xs ,d)))
+      _ (set out (_smart-concat xs d)))
+    (if (= (length out) 1)
+      `,(unpack out)
+      (if (= d "")
+        `(.. ,(unpack out))
+        `(table.concat ,out ,d)))))
+
+; TODO rewrite with match
+;(fn _lit? [x]
+;  (if (sym? x)
+;    false
+;    (if (list? x)
+;      false
+;      (if (sequence? x)
+;        (do
+;          (each [_ v (ipairs x)]
+;            (if (not (_lit? v))
+;              (lua "return false")))
+;          true)
+;        (if (or (= (type x) :string)
+;                (= (type x) :number)
+;                (= x nil))
+;          true
+;          false)))))
+
+;; vlua
+
+(fn _vlua [s f]
+  "store a function in _G._zest and return its v:lua, formatting if needed"
+  (let [idx* (_zsm :idx)]
+    (list 'do
+          (list 'local idx* (_zid))
+          (list 'tset '_G.zest.user idx* f)
+          (if s
+            '(string.format ,s (.. "v:lua._zest.user." ,idx*))
+            '(.. "v:lua._zest.user." ,idx*)))))
+
+(fn vlua [x y]
+  "prepare arguments for _vlua"
+  (match [x y]
+    [x nil] (_vlua nil x)
+    [x   y] (_vlua x   y)))
 
 ;; options
 
@@ -107,51 +140,76 @@
 (fn _keymap-options [args]
   "convert seq of options 'args' to 'modes' string and keymap 'opts'"
   (let [modes (tostring (table.remove args 1))
-        opts-xs args
         opts {:noremap true
               :expr    false}]
-    (each [_ o (ipairs opts-xs)]
+    (each [_ o (ipairs args)]
       (if (= o :remap)
         (tset opts :noremap false)
         (tset opts o true)))
     (values modes opts)))
 
+; TODO if i split this into _keymap-id-lhs and _keymap-id-mod, 
+; it should be easier to deal with the output at the end? maybe?
+; cause right now if mod is not lit and lhs is lit, we're still draggind a function here
+; i should split and bring back _concat
+
+(fn _keymap-id-lhs [lhs]
+  (if (= (type lhs) :string)
+    (string.gsub lhs "%W" (fn [c] (string.byte c)))
+    '(string.gsub ,lhs "%W" (fn [c#] (string.byte c#)))))
+
+; clean output uhh, demans a sacrifice, i guess
+; if you have any other ideas, please tell me in an issue
+(fn _keymap-vlua [uid* uid opt* opt]
+  (match [(= (type uid) :string)
+          (and (not (sym? opt))
+               (not (sym? (. opt :expr)))
+               (not (= (. opt :expr) nil)))]
+    [true true  ] (if opt.expr
+                    (.. "v:lua.zest.keymap." uid "()")
+                    (.. ":call v:lua.zest.keymap." uid "()<cr>"))
+    [true false ] '(if (. ,opt :expr)
+                     (.. "v:lua.zest.keymap." ,uid "()")
+                     (.. ":call v:lua.zest.keymap." ,uid "()<cr>"))
+    [false true ] (if opt.expr
+                    '(.. "v:lua.zest.keymap." ,uid* "()")
+                    '(.. ":call v:lua.zest.keymap." ,uid* "()<cr>"))
+    _ '(if (. ,opt :expr)
+         (.. "v:lua.zest.keymap." ,uid* "()")
+         (.. ":call v:lua.zest.keymap." ,uid* "()<cr>"))))
+
 (fn def-keymap-string [mod opt lhs rhs]
   (let [(mod* opt* lhs* rhs*) (_zsm :mod :opt :lhs :rhs)]
-    `(do (comment "zest.def-autocmd-string")
+    '(do (comment "zest.def-autocmd-string")
        (let [,mod* ,mod
-           ,opt* ,opt
-           ,lhs* ,lhs
-           ,rhs* ,rhs]
+             ,opt* ,opt
+             ,lhs* ,lhs
+             ,rhs* ,rhs]
        (each [m# (string.gmatch ,mod* ".")]
          (vim.api.nvim_set_keymap m# ,lhs* ,rhs* ,opt*))))))
 
-; NB! syms go to run time, vals go to compile time
+; NB! syms go to run time, lit vals go to compile time
 ; note: we're not reusing def-keymap-string because we can't easily pass both symbols and values to another macro
 (fn def-keymap-fn [mod opt lhs f]
-  (let [(mod* opt* lhs* rhs* idx*) (_zsm :mod :opt :lhs :rhs :idx)
-        idx (scall :keymap_id lhs mod)
-        rhs (if (and (_lit? idx)
-                     (not (sym? opt))
-                     (not (sym? (. opt :expr))))
-              (lime.keymap_vlua idx opt)
-              (list 'lime.keymap_vlua idx* opt*))]
-    `(do (comment "zest.def-keymap-fn")
-       (let [,idx* ,idx
+  (let [(mod* opt* lhs* rhs* uid*) (_zsm :mod :opt :lhs :rhs :uid)
+        uid (_concat [mod "_" (pick-values 1 (_keymap-id-lhs lhs))]) ; NOTE: gsub will add some garbage with the output
+        rhs (_keymap-vlua uid* uid opt* opt)]
+    '(do (comment "zest.def-keymap-fn")
+       (let [,uid* ,uid
              ,mod* ,mod
              ,opt* ,opt
              ,lhs* ,lhs
              ,rhs* ,rhs]
-         (tset _G.zest.keymap ,idx* ,f)
+         (tset _G.zest.keymap ,uid* ,f)
          (each [m# (string.gmatch ,mod* ".")]
            (vim.api.nvim_set_keymap m# ,lhs* ,rhs* ,opt*))))))
 
 (fn def-keymap-pairs [mod opt tab]
   (let [(mod* opt* tab* lhs* rhs*) (_zsm :mod :opt :tab :lhs :rhs)]
-    `(do (comment "zest.def-keymap-pairs")
+    '(do (comment "zest.def-keymap-pairs")
        (let [,mod* ,mod
-           ,opt* ,opt
-           ,tab* ,tab]
+             ,opt* ,opt
+             ,tab* ,tab]
        (each [,lhs* ,rhs* (pairs ,tab*)]
          (each [m# (string.gmatch ,mod* ".")]
            (vim.api.nvim_set_keymap m# ,lhs* ,rhs* ,opt*)))))))
@@ -170,7 +228,7 @@
 
 (fn _create-augroup [dirty? name ...]
   "define a new augroup, with or without autocmd!"
-  (let [definition (scall :concat (fennel.sequence "augroup" name) " ")]
+  (let [definition (_concat [sequence "augroup" name] " ")]
     (list 'do
           (list 'vim.cmd definition)
           (when (not dirty?)
@@ -188,15 +246,12 @@
 ; TODO note to self: don't worry about splicing actual values of autocmd-sym as strings
 ; you'll have to rip that out when the new api comes anyway
 
-; i could use -string in -fn, but i almost like them separate
 (fn def-autocmd-string [eve pat rhs]
-  (let [(eve* pat* rhs*) (_zsm :eve :pat :rhs)
-        eve (scall :concat eve ",")
-        pat (scall :concat pat ",")]
-    `(do (comment "zest.def-autocmd-string")
+  (let [(eve* pat* rhs*) (_zsm :eve :pat :rhs)]
+    '(do (comment "zest.def-autocmd-string")
        (let [,eve* ,eve
-           ,pat* ,pat
-           ,rhs* ,rhs]
+             ,pat* ,pat
+             ,rhs* ,rhs]
        (vim.cmd (.. "autocmd "
                     ,eve* " "
                     ,pat* " "
@@ -204,11 +259,9 @@
 
 (fn def-autocmd-fn [eve pat f]
   (let [(eve* pat* rhs* idx*) (_zsm :eve :pat :rhs :idx)
-        eve (scall :concat eve ",")
-        pat (scall :concat pat ",")
         idx (_zid)
         rhs (list '.. ":call v:lua.zest.autocmd." idx* "()")]
-    `(do (comment "zest.def-autocmd-fn")
+    '(do (comment "zest.def-autocmd-fn")
        (let [,idx* ,idx
              ,eve* ,eve
              ,pat* ,pat
@@ -220,7 +273,9 @@
                       ,rhs*))))))
 
 (fn def-autocmd [eve pat rhs]
-  (let [f (_zfn rhs)]
+  (let [f (_zfn rhs)
+        eve (_concat eve ",")
+        pat (_concat pat ",")]
     (if f
       (def-autocmd-fn     eve pat f)
       (def-autocmd-string eve pat rhs))))
@@ -236,12 +291,8 @@
 ;  (let [a (list 'print :w)]
 ;    (list 'print (fennel.list? a))))
 
-(fn test []
-  (let [s (sequence :a)]
-    (list 'print (inspect s))))
-
 {
- : test
+ : vlua
 
  : set-option
 
@@ -252,6 +303,10 @@
 
  : def-augroup
  : def-augroup-dirty
+
  : def-autocmd
+ : def-autocmd-string
+ : def-autocmd-fn
+
  }
 
