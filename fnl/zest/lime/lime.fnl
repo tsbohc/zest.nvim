@@ -18,23 +18,17 @@
     (set n (+ n 1))
     id))
 
-(fn _vlua [kind f]
-  (let [id (M.id)]
-    (tset _G.zest kind id f)
-    (.. "v:lua.zest." kind "." id)))
-
-(fn M.vlua [f]
-  (_vlua :user f))
-
 (fn M.keymap_id [lhs modes]
-  (.. "k1"
+  (.. "_"
       (string.gsub lhs "%W" (fn [c] (string.byte c)))
-      "m0"
+      "_"
       modes))
 
 (fn M.keymap_vlua [id opts]
   (if opts.expr
-    (.. "v:lua.zest.keymap." id ".f()")
-    (.. ":call v:lua.zest.keymap." id ".f()<cr>")))
+    (.. "v:lua.zest.keymap." id "()")
+    (.. ":call v:lua.zest.keymap." id "()<cr>")))
+
+; i need entr fired up
 
 M

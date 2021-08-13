@@ -1,3 +1,6 @@
+; TODO
+; maybe i can get the filename somehow still? on the seq metatable?
+
 (local fennel (require :zest.fennel))
 (local lime (require :zest.lime.lime)) ; for some reason init.fnl was not being picked up as :zest.lime
 
@@ -6,8 +9,15 @@
 (fn partial? [x] (= (?. x 1 1) :partial))
 (fn capitalised? [s] (string.match (s:sub 1 1) "%u"))
 
+(fn zsym [...]
+  "batch prefixed sym wrapper"
+  (let [out []]
+    (each [_ s (ipairs [...])]
+      (table.insert out (gensym (.. "zest_" s))))
+    (unpack out)))
+
 (fn _zf [f]
-  "treat a function before passing it off to vlua"
+  "prepare a function for binding"
   (let [f (if (fennel.sequence? f)
             `(fn [] ,(unpack f))
             f)]
@@ -18,73 +28,83 @@
                    (capitalised? (tostring f))))
       f)))
 
-(fn literal? [x]
-  "check if 'x' is safe to evaluate a compile time"
-  (if (= x nil)
-    true
-    (if (or (= (type x) :string)
-            (= (type x) :number))
-      true
+; {{{ literal? and old scall
+;(fn literal? [x]
+;  "check if 'x' is safe to evaluate a compile time"
+;  (if (= x nil)
+;    true
+;    (if (fennel.sym? x)
+;      false
+;      (if (or (= (type x) :string)
+;              (= (type x) :number))
+;        true
+;        (if (fennel.sequence? x)
+;          (do
+;            (each [_ v (ipairs x)]
+;              (if (not (literal? v))
+;                (lua "return false")))
+;            true)
+;          false)))))
+
+;(fn scall [f ...]
+;  "safely call a lime function in compile or run time"
+;  (var safe? true)
+;  (each [_ x (ipairs [...])]
+;    (if (not (literal? x))
+;      (set safe? false)))
+;  (if safe?
+;    ((. lime f) ...)
+;    (list (sym (.. "lime." f)) ...)))
+;}}}
+
+; TODO rewrite with match
+(fn lit? [x]
+  (if (fennel.sym? x)
+    false
+    (if (fennel.list? x)
+      false
       (if (fennel.sequence? x)
         (do
           (each [_ v (ipairs x)]
-            (if (not (literal? v))
+            (if (not (lit? v))
               (lua "return false")))
           true)
-        false))))
+        (if (or (= (type x) :string)
+                (= (type x) :number)
+                (= x nil))
+          true
+          false)))))
 
-; FIXME only the first argument is checked for safety
-(fn scall [f x ...]
-  "safely call a lime function in compile or run time"
-  (if (literal? x)
-    ((. lime f) x ...)
-    (list (sym (.. "lime." f)) x ...)))
+(fn scall [f ...]
+  (var safe? true)
+  (each [_ x (ipairs [...])]
+    (if (not (lit? x))
+      (set safe? false)))
+  (if safe?
+    (let [res ((. lime f) ...)]
+      (if (and (not (fennel.sym? res))
+               (not (fennel.list? res)))
+        res
+        (list (sym (.. "lime." f)) ...)))
+    (list (sym (.. "lime." f)) ...)))
 
 ;; keymaps
 
-; FIXME this is probably over engineered very hard
-; i should just consider options literal and stop doing this
-; vim doesn't allow passing modes or <expr> does it?
-; it makes sense with autocmds, but here? it's too much of a bother
-;(fn def-keymap [opts lhs rhs]
-;  (let [f (_zf rhs)
-;        id-sym (gensym "zest_id")
-;        modes-sym (gensym "zest_modes")
-;        opts-sym (gensym "zest_opts")
-;        vlua-sym (gensym "zest_vlua")
-;        keymap-sym (gensym "zest_keymap")
-;        id '(lime.id)]
-;    (list 'do
-;          (list 'local modes-sym (list 'table.remove opts 1))
-;          (list 'local opts-sym (scall :keymap-opts opts))
-;          (if f (list 'local id-sym '(lime.id)))
-;          (if f (list 'local vlua-sym (list 'string.format (scall :format opts :keymap) id-sym)))
-;          (list 'local keymap-sym
-;                {
-;                 :kind :keymap
-;                 :modes modes-sym
-;                 :opts opts-sym
-;                 : lhs
-;                 :rhs (if f vlua-sym rhs)
-;                 : f
-;                 })
-;          (if f (list 'tset '_G.zest.keymap id-sym keymap-sym))
-;
-;          )))
-
-; FIXME i think it'd be better if i just split those into two. extracting some code and repeating a bit is better than this
-(fn def-keymap [args lhs rhs]
-
-  ; TODO extract options like you had before
+(fn _keymap-options [args]
+  "convert seq of options 'args' to 'modes' string and keymap 'opts'"
   (let [modes (tostring (table.remove args 1))
-        opts (let [opts {:noremap true}]
-               (each [_ o (ipairs args)]
-                 (if (= o :remap)
-                   (tset opts :noremap false)
-                   (tset opts o true)))
-               opts)
+        opts-xs args
+        ; note: expr is preset to reduce lime calls
+        opts {:noremap true
+              :expr    false}]
+    (each [_ o (ipairs opts-xs)]
+      (if (= o :remap)
+        (tset opts :noremap false)
+        (tset opts o true)))
+    (values modes opts)))
 
-        ; TODO separate into normal and fn macros and use this one as the entry point
+(fn def-keymap [args lhs rhs]
+  (let [(modes opts) (_keymap-options args)
         f (_zf rhs)
         id (scall :keymap_id lhs modes)
         id-sym (gensym "zest_id")
@@ -92,16 +112,16 @@
         opts-sym (gensym "zest_opts")]
     (list 'do
           (if f (list 'local id-sym id))
-          (if (and f (not (literal? id))) (list 'local opts-sym opts))
+          (if (and f (not (lit? id))) (list 'local opts-sym opts))
           (list 'local keymap-sym
                 {
                  ;: modes
                  : f
                  : lhs
-                 :opts (if (and f (not (literal? id))) opts-sym opts)
+                 :opts (if (and f (not (lit? id))) opts-sym opts)
                  :rhs (if (not f)
                         rhs
-                        (if (literal? id)
+                        (if (lit? id)
                           (lime.keymap_vlua id opts)
                           (list 'lime.keymap_vlua id-sym opts-sym)))})
           (if f (list 'tset '_G.zest.keymap id-sym keymap-sym))
@@ -127,30 +147,89 @@
                                         (sym (.. (tostring keymap-sym) ".opts")))))
               (unpack out))))))
 
+; TODO extract bindings into a separate macro and unwrap if possible
+
+(fn def-keymap-string [mod opt lhs rhs]
+  (let [(mod* opt* lhs* rhs*) (zsym :mod :opt :lhs :rhs)]
+    `(let [,mod* ,mod
+           ,opt* ,opt
+           ,lhs* ,lhs
+           ,rhs* ,rhs]
+       (each [m# (string.gmatch ,mod* ".")]
+         (vim.api.nvim_set_keymap m# ,lhs* ,rhs* ,opt*)))))
+
+; NB! syms go to run time, vals go to compile time
+; note: we're not reusing def-keymap-string because we can't easily pass both symbols and values to another macro
+(fn def-keymap-fn [mod opt lhs f]
+  (let [(mod* opt* lhs* rhs* idx*) (zsym :mod :opt :lhs :rhs :idx)
+        idx (scall :keymap_id lhs mod)
+        rhs (match [(lit? idx) (not (fennel.sym? opt)) (. opt :expr)]
+              ; TODO can probably be done without manual checks
+              ; this can be considered a micro optimisation and prolly should be removed anyway
+              ; human checks are error prone
+              [true  true x    ] (lime.keymap_vlua idx opt)
+              [false true true ] (list '.. "v:lua.zest.keymap." idx* "()")
+              [false true false] (list '.. ":call v:lua.zest.keymap" idx* "()<cr>")
+              _ (list 'lime.keymap_vlua idx* opt*))]
+    `(let [,idx* ,idx
+           ,mod* ,mod
+           ,opt* ,opt
+           ,lhs* ,lhs
+           ,rhs* ,rhs]
+       (tset _G.zest.keymap ,idx* ,f)
+       (each [m# (string.gmatch ,mod* ".")]
+         (vim.api.nvim_set_keymap m# ,lhs* ,rhs* ,opt*)))))
+
+(fn def-keymap-pairs [mod opt tab]
+  (let [(mod* opt* tab* lhs* rhs*) (zsym :mod :opt :tab :lhs :rhs)]
+    `(let [,mod* ,mod
+           ,opt* ,opt
+           ,tab* ,tab]
+       (each [,lhs* ,rhs* (pairs ,tab*)]
+         (each [m# (string.gmatch ,mod* ".")]
+           (vim.api.nvim_set_keymap m# ,lhs* ,rhs* ,opt*))))))
+
+(fn def-keymap [args lhs rhs]
+  (let [(mod opt) (_keymap-options args)
+        f (_zf rhs)]
+    (match [rhs f]
+      [x   nil] (def-keymap-string mod opt lhs rhs)
+      [x     y] (def-keymap-fn     mod opt lhs f)
+      [nil nil] (def-keymap-pairs  mod opt lhs))))
+
+
+
+
+
+
 ; for now anyway
-(fn def-keymap-pairs [args xt]
-  (let [modes (tostring (table.remove args 1))
-        opts (let [opts {:noremap true}]
-               (each [_ o (ipairs args)]
-                 (if (= o :remap)
-                   (tset opts :noremap false)
-                   (tset opts o true)))
-               opts)]
-    (list 'do
-          (list 'local 'zest_opts# opts)
-          (let [out []]
-            (each [k v (pairs xt)]
-              (if (= modes "nvo") ; TODO a better check
-                (table.insert out `(vim.api.nvim_set_keymap "" ,k ,v zest_opts#))
-                (each [m (modes:gmatch ".")]
-                  (table.insert out `(vim.api.nvim_set_keymap ,m ,k ,v zest_opts#)))))
-            (unpack out)))))
+;(fn def-keymap-pairs [args xt]
+;  (let [modes (tostring (table.remove args 1))
+;        opts (let [opts {:noremap true}]
+;               (each [_ o (ipairs args)]
+;                 (if (= o :remap)
+;                   (tset opts :noremap false)
+;                   (tset opts o true)))
+;               opts)]
+;    (list 'do
+;          (list 'local 'zest_opts# opts)
+;          (let [out []]
+;            (each [k v (pairs xt)]
+;              (if (= modes "nvo") ; TODO a better check
+;                (table.insert out `(vim.api.nvim_set_keymap "" ,k ,v zest_opts#))
+;                (each [m (modes:gmatch ".")]
+;                  (table.insert out `(vim.api.nvim_set_keymap ,m ,k ,v zest_opts#)))))
+;            (unpack out)))))
+
+;(fn test []
+;  (list 'print (tostring (gensym "_G.zest.ya"))))
+;
+;(fn test []
+;  (list 'local* '(one# two#) (list 'foo)))
 
 (fn test []
-  (list 'print (tostring (gensym "_G.zest.ya"))))
-
-;(fn def-keymap []
-;  (list 'local '(one# two#) (list 'foo)))
+  (let [a (list 'print :w)]
+    (list 'print (fennel.list? a))))
 
 ;; autocmds
 
@@ -187,7 +266,7 @@
 
     ; TODO split into two like before, this as the entry point
     (let [cmd-xs (fennel.sequence "autocmd" events patterns (if f vlua-sym rhs))]
-      (if (literal? cmd-xs)
+      (if (lit? cmd-xs)
         (list 'vim.cmd (scall :concat cmd-xs " "))
         (list 'do
               (if f (list 'local id-sym id))
@@ -206,7 +285,10 @@
                         " "
                         (sym (.. (tostring autocmd-sym) ".rhs")))))))))
 
-{: test
+{
+ : def-keymap-string
+ : def-keymap-fn
+ : test
  : def-keymap
  : def-keymap-pairs
  : def-augroup

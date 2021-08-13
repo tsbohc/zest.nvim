@@ -16,25 +16,17 @@ M.id = function()
   n = (n + 1)
   return id
 end
-local function _vlua(kind, f)
-  local id = M.id()
-  do end (_G.zest)[kind][id] = f
-  return ("v:lua.zest." .. kind .. "." .. id)
-end
-M.vlua = function(f)
-  return _vlua("user", f)
-end
 M.keymap_id = function(lhs, modes)
   local function _2_(c)
     return string.byte(c)
   end
-  return ("k1" .. string.gsub(lhs, "%W", _2_) .. "m0" .. modes)
+  return ("_" .. string.gsub(lhs, "%W", _2_) .. "_" .. modes)
 end
 M.keymap_vlua = function(id, opts)
   if opts.expr then
-    return ("v:lua.zest.keymap." .. id .. ".f()")
+    return ("v:lua.zest.keymap." .. id .. "()")
   else
-    return (":call v:lua.zest.keymap." .. id .. ".f()<cr>")
+    return (":call v:lua.zest.keymap." .. id .. "()<cr>")
   end
 end
 return M
