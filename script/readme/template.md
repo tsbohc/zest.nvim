@@ -14,7 +14,7 @@ For a full config example, see my [dotfiles](https://github.com/tsbohc/.garden/t
 - Seamlessly integrate lua functions into keymaps, autocmds, etc
 - Be primarily a library of macros, do as much as possible at compile time
 - Output code that is readable and efficient
-- Remain compatible with everything, yet standalone
+- Be compatible with everything
 
 <b>WIP</b> If you have any feedback or ideas on how to improve zest, please share them with me! You can reach me in an issue or at @tsbohc on the [conjure discord](conjure.fun/discord).
 

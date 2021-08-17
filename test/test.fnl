@@ -1,16 +1,10 @@
 (require-macros :zest.lime.macros)
-(local zest (require :zest))
-
-(local KEY "<F4>")
-(local CMD ":lua vim.g.zest_received = true<cr>")
-(local EVENT "User")
-(local SELECTOR "ZestTestUserEvent")
+(local lime (require :zest.lime))
 
 ; def-test
 
 ; {{{
-(fn clear []
-  (zest.setup))
+(fn clear [] (lime.setup))
 
 (clear)
 
@@ -23,13 +17,13 @@
 
 (fn t.= [x y description]
   (if (= x y)
-    (print (.. "  + " description))
-    (print (.. ">>>>>>>>>>>>>>> YOU SUCK! " description "\n" "    " (vim.inspect x) " != " (vim.inspect y)))))
+    (print (.. " + " description))
+    (print (.. "  YOU SUCK! " description "\n" "    " (vim.inspect x) " != " (vim.inspect y)))))
 
 (fn t.? [x description]
   (if x
-    (print (.. "  + " description))
-    (print (.. ">>>>>>>>>>>>>>> YOU SUCK! " description "\n" "    " (vim.inspect x)))))
+    (print (.. " + " description))
+    (print (.. "  YOU SUCK! " description "\n" "    " (vim.inspect x)))))
 
 
 ; keymaps
@@ -40,7 +34,13 @@
     (vim.api.nvim_feedkeys raw-keys "mx" false)))
 
 (fn t.k [description]
-  (rinput KEY)
+  (rinput "<F4>")
+  (t.? vim.g.zest_received description)
+  (tset vim.g :zest_received false)
+  (clear))
+
+(fn t.a [description]
+  (vim.cmd "doautocmd User ZestEvent")
   (t.? vim.g.zest_received description)
   (tset vim.g :zest_received false)
   (clear))
@@ -48,37 +48,53 @@
 
 ; tests
 
-(def-test t_def-keymap
-  (def-keymap [n] KEY ":lua vim.g.zest_received = true<cr>")
-  (t.k "var -> str")
+(def-test _def-keymap
+  (local KEY "<F4>")
+  (local CMD ":lua vim.g.zest_received = true<cr>")
+
+  (def-keymap [n :silent] "<F4>" ":lua vim.g.zest_received = true<cr>")
+  (t.k "strings")
 
   (let [cmd CMD]
-    (def-keymap [n] "<F4>" cmd))
-  (t.k "str -> lowercase var")
+    (def-keymap [n :silent] KEY cmd))
+  (t.k "lowercase")
 
-  (def-keymap [n] KEY (fn [] (set vim.g.zest_received true)))
-  (t.k "fn")
+  (def-keymap [n :silent] KEY (fn [] (set vim.g.zest_received true)))
+  (t.k "normal fn")
 
-  (def-keymap [n] KEY #(set vim.g.zest_received true))
+  (def-keymap [n :silent] KEY #(set vim.g.zest_received true))
   (t.k "hash fn")
 
-  (def-keymap [n] KEY (partial (fn [x] (set vim.g.zest_received x)) true))
+  (def-keymap [n :silent] KEY (partial (fn [x] (set vim.g.zest_received x)) true))
   (t.k "partial fn")
 
-  (def-keymap [n] KEY [(set vim.g.zest_received true)])
-  (t.k "seq fn")
+  (def-keymap [n :silent] KEY [(set vim.g.zest_received true)])
+  (t.k "sequence fn")
 
   (fn Testfn [] (set vim.g.zest_received true))
-  (def-keymap [n] KEY Testfn)
-  (t.k "capitalised var"))
+  (def-keymap [n :silent] KEY Testfn)
+  (t.k "capitalised"))
 
-; run tests
+(def-test _def-autocmd
+  (local CMD ":lua vim.g.zest_received = true")
+  (local EVENT "User")
+  (local SELECTOR "ZestEvent")
+
+  (def-autocmd "User" "ZestEvent" ":lua vim.g.zest_received = true")
+  (t.a "strings")
+
+  (def-autocmd EVENT "ZestEvent" ":lua vim.g.zest_received = true")
+  (t.a "var event")
+
+  (def-autocmd "User" "ZestEvent" ":lua vim.g.zest_received = true")
+
+  )
 
 (each [k v (pairs _G.zest_tests)]
   (print (.. "" k))
   (v))
-
 (clear)
+
 
 ;(def-test _vlua
 ;  (clear)

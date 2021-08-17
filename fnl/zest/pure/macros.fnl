@@ -1,8 +1,5 @@
 ; TODO
-; def-command still missing
-
-; hmmm i could actually split stuff like this
-;(local lime (require :zest.lime.lime)) ; for some reason init.fnl was not being picked up as :zest.lime
+; def-command
 
 ;; util
 
@@ -72,25 +69,9 @@
         `(.. ,(unpack out))
         `(table.concat ,out ,d)))))
 
-; TODO rewrite with match
-;(fn _lit? [x]
-;  (if (sym? x)
-;    false
-;    (if (list? x)
-;      false
-;      (if (sequence? x)
-;        (do
-;          (each [_ v (ipairs x)]
-;            (if (not (_lit? v))
-;              (lua "return false")))
-;          true)
-;        (if (or (= (type x) :string)
-;                (= (type x) :number)
-;                (= x nil))
-;          true
-;          false)))))
+;; helpers
 
-;; vlua
+; vlua
 
 (fn _vlua [s f]
   "store a function in _G._zest and return its v:lua, formatting if needed"
@@ -99,14 +80,17 @@
           (list 'local idx* (_zid))
           (list 'tset '_G.zest.user idx* f)
           (if s
-            '(string.format ,s (.. "v:lua._zest.user." ,idx*))
-            '(.. "v:lua._zest.user." ,idx*)))))
+            '(string.format ,s (.. "v:lua.zest.user." ,idx*))
+            '(.. "v:lua.zest.user." ,idx*)))))
 
 (fn vlua [x y]
   "prepare arguments for _vlua"
   (match [x y]
     [x nil] (_vlua nil x)
     [x   y] (_vlua x   y)))
+
+(fn vim-g [k v]
+  '(tset vim.g ,(tostring k) ,v))
 
 ;; options
 
@@ -133,10 +117,6 @@
 
 ;; keymaps
 
-; TODO extract bindings into a separate macro and unwrap if possible
-; micro opt?
-;(fn _keymap-calls [mod ])
-
 (fn _keymap-options [args]
   "convert seq of options 'args' to 'modes' string and keymap 'opts'"
   (let [modes (tostring (table.remove args 1))
@@ -148,18 +128,12 @@
         (tset opts o true)))
     (values modes opts)))
 
-; TODO if i split this into _keymap-id-lhs and _keymap-id-mod, 
-; it should be easier to deal with the output at the end? maybe?
-; cause right now if mod is not lit and lhs is lit, we're still draggind a function here
-; i should split and bring back _concat
-
 (fn _keymap-id-lhs [lhs]
   (if (= (type lhs) :string)
     (string.gsub lhs "%W" (fn [c] (string.byte c)))
     '(string.gsub ,lhs "%W" (fn [c#] (string.byte c#)))))
 
-; clean output uhh, demans a sacrifice, i guess
-; if you have any other ideas, please tell me in an issue
+; clean output uhh, demands a sacrifice
 (fn _keymap-vlua [uid* uid opt* opt]
   (match [(= (type uid) :string)
           (and (not (sym? opt))
@@ -188,11 +162,9 @@
        (each [m# (string.gmatch ,mod* ".")]
          (vim.api.nvim_set_keymap m# ,lhs* ,rhs* ,opt*))))))
 
-; NB! syms go to run time, lit vals go to compile time
-; note: we're not reusing def-keymap-string because we can't easily pass both symbols and values to another macro
 (fn def-keymap-fn [mod opt lhs f]
   (let [(mod* opt* lhs* rhs* uid*) (_zsm :mod :opt :lhs :rhs :uid)
-        uid (_concat [mod "_" (pick-values 1 (_keymap-id-lhs lhs))]) ; NOTE: gsub will add some garbage with the output
+        uid (_concat [mod "_" (pick-values 1 (_keymap-id-lhs lhs))]) ; NOTE: gsub will add some garbage to the output
         rhs (_keymap-vlua uid* uid opt* opt)]
     '(do (comment "zest.def-keymap-fn")
        (let [,uid* ,uid
@@ -228,7 +200,7 @@
 
 (fn _create-augroup [dirty? name ...]
   "define a new augroup, with or without autocmd!"
-  (let [definition (_concat [sequence "augroup" name] " ")]
+  (let [definition (_concat ["augroup" name] " ")]
     (list 'do
           (list 'vim.cmd definition)
           (when (not dirty?)
@@ -242,9 +214,6 @@
 
 (fn def-augroup-dirty [name ...]
   (_create-augroup true name ...))
-
-; TODO note to self: don't worry about splicing actual values of autocmd-sym as strings
-; you'll have to rip that out when the new api comes anyway
 
 (fn def-autocmd-string [eve pat rhs]
   (let [(eve* pat* rhs*) (_zsm :eve :pat :rhs)]
@@ -279,17 +248,6 @@
     (if f
       (def-autocmd-fn     eve pat f)
       (def-autocmd-string eve pat rhs))))
-
-
-;(fn test []
-;  (list 'print (tostring (gensym "_G.zest.ya"))))
-;
-;(fn test []
-;  (list 'local* '(one# two#) (list 'foo)))
-
-;(fn test []
-;  (let [a (list 'print :w)]
-;    (list 'print (fennel.list? a))))
 
 {
  : vlua
