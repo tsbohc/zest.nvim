@@ -1,5 +1,8 @@
 ; internal
 
+; I should bind vim.api.nvim_set_keymap locally when using it multiple times
+; hmmm, need to bench that
+
 (local M {})
 
 (fn _encode [s]
