@@ -11,9 +11,8 @@ local function setup(xt)
   _G._zest = {autocmd = {["#"] = 1}, command = {["#"] = 1}, config = config(xt), keymap = {["#"] = 1}, v = {["#"] = 1}}
   return nil
 end
-require("zest.pure")
-local debug_3f = false
 local N = 1
+_G.zest = (_G.zest or {["#"] = 1, autocmd = {}, keymap = {}, user = {}})
 local function id()
   local id0 = N
   N = (N + 1)
@@ -42,13 +41,6 @@ local function concat(xs, d)
     return xs
   end
 end
-local function vim_cmd(c)
-  if debug_3f then
-    return print(c)
-  else
-    return vim.cmd(c)
-  end
-end
 local function def_keymap(mod, opt, lhs, rhs)
   local rhs0
   if opt.expr then
@@ -69,6 +61,6 @@ local function def_keymap_pairs(mod, opt, xs)
 end
 local function def_autocmd(eve, pat, rhs)
   local rhs0 = bind(":call %s()", rhs)
-  return vim_cmd(concat({"autocmd", concat(eve, ","), concat(pat, ","), rhs0}, " "))
+  return vim.cmd(concat({"autocmd", concat(eve, ","), concat(pat, ","), rhs0}, " "))
 end
 return {["def-autocmd"] = def_autocmd, ["def-keymap"] = def_keymap, ["def-keymap-pairs"] = def_keymap_pairs, def_autocmd = def_autocmd, def_keymap = def_keymap, def_keymap_pairs = def_keymap_pairs, setup = setup, vlua = vlua}

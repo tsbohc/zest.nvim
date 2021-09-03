@@ -16,12 +16,14 @@
         :config (config xt)}))
 ; }}}
 
-; initialise _G.zest
-(require :zest.pure)
-
-(local debug? false)
+; I need some fancy pcaller instead of straight v:lua
 
 (var N 1)
+
+; initialise _G.zest
+(set _G.zest
+     (or _G.zest
+         {:# 1 :keymap {} :autocmd {} :user {}}))
 
 (fn id []
   (let [id N]
@@ -37,6 +39,7 @@
         (string.format s vlua)
         vlua))))
 
+; i should probably make this the default behavior of vlua
 (fn bind [s data]
   "return a formatted vlua or the passed string"
   (or (vlua s data)
@@ -48,11 +51,6 @@
       (table.concat xs d)
       (= (type xs) :string)
       xs)))
-
-(fn vim-cmd [c]
-  (if debug?
-    (print c)
-    (vim.cmd c)))
 
 ;; keymaps
 
@@ -71,8 +69,11 @@
 
 (fn def-autocmd [eve pat rhs]
   (let [rhs (bind ":call %s()" rhs)]
-    (vim-cmd (concat ["autocmd" (concat eve ",") (concat pat ",") rhs] " "))))
+    (vim.cmd (concat ["autocmd" (concat eve ",") (concat pat ",") rhs] " "))))
 
+; TODO automate this
+; or just use lua-compatible names
+; ehhh, no, I want both
 
 {
  : vlua
