@@ -87,43 +87,47 @@
 
 (fn M.def-keymap [...]
   (let [arg-xs [...]
-        out []]
+        out []
+        opts-sym (gensym :ZEST_OPTS)]
     (match (length arg-xs)
       3 (let [(fs args ts) (unpack arg-xs)
               (modes opts) (_keymap-options args)]
           (if (> (length modes) 1)
             (do
               (each [m (string.gmatch modes ".")]
-                (table.insert out `(vim.api.nvim_set_keymap ,m ,fs ,ts ZEST_OPTS#)))
-              `(let [ZEST_OPTS# ,opts]
+                (table.insert out `(vim.api.nvim_set_keymap ,m ,fs ,ts ,opts-sym)))
+              `(let [,opts-sym ,opts]
                  ,(unpack out)))
             `(vim.api.nvim_set_keymap ,modes ,fs ,ts ,opts)))
       2 (let [(args xt) (unpack arg-xs)
               (modes opts) (_keymap-options args)]
           (each [fs ts (pairs xt)]
             (each [m (string.gmatch modes ".")]
-              (table.insert out `(vim.api.nvim_set_keymap ,m ,fs ,ts ZEST_OPTS#))))
-          `(let [ZEST_OPTS# ,opts]
+              (table.insert out `(vim.api.nvim_set_keymap ,m ,fs ,ts ,opts-sym))))
+          `(let [,opts-sym ,opts]
              ,(unpack out))))))
 
 (fn M.def-keymap-fn [fs args ...]
   (let [(modes opts) (_keymap-options args)
         vlua (_vlua `(fn [] ,...) :keymap (M.smart-concat [fs modes]))
+        vlua-sym (gensym :ZEST_VLUA)
+        rhs-sym (gensym :ZEST_RHS)
         rhs (if opts.expr
-              `(.. ZEST_VLUA# "()")
-              `(.. ":call " ZEST_VLUA# "()<cr>"))
+              `(.. ,vlua-sym "()")
+              `(.. ":call " ,vlua-sym "()<cr>"))
+        opts-sym (gensym :ZEST_OPTS)
         out []]
     (if (> (length modes) 1)
       (do
         (each [m (string.gmatch modes ".")]
-          (table.insert out `(vim.api.nvim_set_keymap ,m ,fs ZEST_RHS# ZEST_OPTS#)))
-        `(let [ZEST_VLUA# ,vlua
-               ZEST_RHS# ,rhs
-               ZEST_OPTS# ,opts]
+          (table.insert out `(vim.api.nvim_set_keymap ,m ,fs ,rhs-sym ,opts-sym)))
+        `(let [,vlua-sym ,vlua
+               ,rhs-sym ,rhs
+               ,opts-sym ,opts]
            ,(unpack out)))
-      `(let [ZEST_VLUA# ,vlua
-             ZEST_RHS# ,rhs]
-         (vim.api.nvim_set_keymap ,modes ,fs ZEST_RHS# ,opts)))))
+      `(let [,vlua-sym ,vlua
+             ,rhs-sym ,rhs]
+         (vim.api.nvim_set_keymap ,modes ,fs ,rhs-sym ,opts)))))
 
 ;(fn M.unquote? [sy]
 ;  (let [ref (?. sy 1 1)]
@@ -178,8 +182,9 @@
   (let [events (M.smart-concat events ",")
         patterns (M.smart-concat patterns ",")
         vlua (_vlua `(fn [] ,...) :autocmd)
-        command (M.smart-concat ["autocmd " events " " patterns " :call " `ZEST_VLUA# "()"])]
-    `(let [ZEST_VLUA# ,vlua]
+        vlua-sym (gensym :ZEST_VLUA)
+        command (M.smart-concat ["autocmd " events " " patterns " :call " vlua-sym "()"])]
+    `(let [,vlua-sym ,vlua]
        (vim.cmd ,command))))
 
 ; command
@@ -197,8 +202,9 @@
         va? (_dumb-varg? args)
         nargs (.. "-nargs=" (if va?  "*" (match len 0 "0" 1 "1" _ "*")))
         f-args (if va?  "<f-args>" (match len 0 "" 1 "<q-args>" _ "<f-args>"))
-        command (M.smart-concat ["command " nargs " " name " :call " `ZEST_VLUA# "(" f-args ")"])]
-    `(let [ZEST_VLUA# ,vlua]
+        vlua-sym (gensym :ZEST_VLUA)
+        command (M.smart-concat ["command " nargs " " name " :call " vlua-sym "(" f-args ")"])]
+    `(let [,vlua-sym ,vlua]
        (vim.cmd ,command))))
 
 ; setoption bakery
